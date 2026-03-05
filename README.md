@@ -30,6 +30,58 @@ On macOS you may also double-click the JAR file if `.jar` files are associated w
 
 ---
 
+## Troubleshooting — if the JAR does not open
+
+If `java -jar EWItool.jar` does nothing, shows an error, or closes immediately, run the
+appropriate diagnostic script below.  It collects system information (Java version, OS,
+architecture, MIDI devices, display settings, and the error output from the JAR) and saves
+everything to a file called `ewi-diagnostics.txt`.  Upload that file when reporting a bug.
+
+### Linux / macOS
+
+```bash
+# Download the script alongside EWItool.jar, then:
+chmod +x diagnose.sh
+./diagnose.sh              # looks for EWItool.jar in the current directory
+# or
+./diagnose.sh /path/to/EWItool.jar
+```
+
+### Windows (PowerShell)
+
+```powershell
+# In a PowerShell window in the folder containing EWItool.jar:
+.\diagnose.ps1
+# or, if your execution policy blocks unsigned scripts, run first:
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+.\diagnose.ps1 -JarPath "C:\path\to\EWItool.jar"
+```
+
+### Windows (double-click)
+
+Double-click **`diagnose.bat`** in the same folder as `EWItool.jar`.  It runs
+`diagnose.ps1` automatically and saves `ewi-diagnostics.txt` in the same folder.
+
+### What the scripts check
+
+| # | Check |
+|---|-------|
+| 1 | Operating system name, version, and CPU architecture |
+| 2 | Java installation (version, vendor, path, registry entries) |
+| 3 | Full Java system properties (`-XshowSettings:all`) |
+| 4 | JAR file validity (magic bytes, size, manifest `Main-Class`) |
+| 5 | Display / graphics environment (GPU, DPI, X11/Wayland) |
+| 6 | MIDI / audio devices |
+| 7 | Attempt to launch `EWItool.jar` and capture any error output |
+| 8 | Environment variables (`PATH`, `JAVA_HOME`, etc.) |
+| 9 | Available disk space |
+
+> **Note:** The bundled OpenJFX native libraries cover **Linux x86-64, macOS Intel,
+> macOS Apple Silicon, and Windows x86-64**.  Other architectures (e.g. Linux ARM /
+> Raspberry Pi, 32-bit Windows) are not supported by the pre-built JAR.
+
+---
+
 ## Building from source
 
 ### Prerequisites
@@ -68,6 +120,9 @@ EWItool/
 │       └── resources/
 │           ├── ewitool/        # CSS stylesheet
 │           └── resources/      # Application icon
+├── diagnose.sh                 # Diagnostic script (Linux / macOS)
+├── diagnose.ps1                # Diagnostic script (Windows PowerShell)
+├── diagnose.bat                # Diagnostic launcher (Windows, double-click)
 ├── pom.xml                     # Maven build file
 └── README.md
 ```
