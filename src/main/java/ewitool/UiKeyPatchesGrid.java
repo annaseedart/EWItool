@@ -115,13 +115,13 @@ public class UiKeyPatchesGrid extends GridPane {
  
     add( new Label( "Eb/D#" ), 0, 9 );
     keyChoices[8] = new ChoiceBox<>();
-    keyChoices[8].setOnAction( (ae) -> sharedData.quickPCs[8] = (byte) keyChoices[0].getSelectionModel().getSelectedIndex() );
+    keyChoices[8].setOnAction( (ae) -> sharedData.quickPCs[8] = (byte) keyChoices[8].getSelectionModel().getSelectedIndex() );
     add( keyChoices[8], 1, 9 );
     getRowConstraints().add( vgrowRC );
  
     add( new Label( "D" ), 0, 10 );
     keyChoices[9] = new ChoiceBox<>();
-    keyChoices[9].setOnAction( (ae) -> sharedData.quickPCs[9] = (byte) keyChoices[0].getSelectionModel().getSelectedIndex() );
+    keyChoices[9].setOnAction( (ae) -> sharedData.quickPCs[9] = (byte) keyChoices[9].getSelectionModel().getSelectedIndex() );
     add( keyChoices[9], 1, 10 );
     getRowConstraints().add( vgrowRC );
  

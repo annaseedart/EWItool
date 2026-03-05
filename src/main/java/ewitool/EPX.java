@@ -260,7 +260,7 @@ public class EPX {
       if (resp != null && resp.contains( "Resource id #" )) {
         Alert okAl = new Alert( AlertType.INFORMATION );
         okAl.setTitle( "EWItool - Patch Exchange Submission" );
-        okAl.setContentText( "Patch Succesfully sent to EWI Patch Exchange - Thank You" );
+        okAl.setContentText( "Patch Successfully sent to EWI Patch Exchange - Thank You" );
         okAl.showAndWait();
       } else if (resp != null && resp.contains( "duplicate key" )) {
         Alert w1Al = new Alert( AlertType.ERROR );
