@@ -92,7 +92,7 @@ public class MidiSender implements Runnable {
             break;
           case SYSEX:
             try {
-              Debugger.log( "DBEUG - MidiSender thread got SysEx to send.  Length: " + msg.bytes.length );
+              Debugger.log( "DEBUG - MidiSender thread got SysEx to send.  Length: " + msg.bytes.length );
               if (msg.bytes.length == 0 || msg.bytes[0] != MidiHandler.MIDI_SYSEX_HEADER) {
                 System.err.println( "Error - MidiSender received invalid SysEx send request" );
                 System.exit( 1 );

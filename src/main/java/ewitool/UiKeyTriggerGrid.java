@@ -42,7 +42,7 @@ public class UiKeyTriggerGrid extends GridPane {
     keyTriggerChoice.getItems().addAll( "Single", "Multi" );
     keyTriggerChoice.setOnAction( (event) -> {
       midiHandler.sendLiveControl( 7, 81, keyTriggerChoice.getSelectionModel().getSelectedIndex() );
-      editPatch.formantFilter = keyTriggerChoice.getSelectionModel().getSelectedIndex(); 
+      editPatch.keyTrigger = keyTriggerChoice.getSelectionModel().getSelectedIndex(); 
     });
     add( keyTriggerChoice, 0, 1 );
     

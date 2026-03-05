@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>uk.co.stephenmerrony</groupId>
+    <artifactId>EWItool</artifactId>
+    <version>2.1</version>
+    <packaging>jar</packaging>
+
+    <name>EWItool</name>
+    <description>Open source controller and patch editor/librarian for the Akai EWI4000s wind synthesizer.</description>
+    <url>https://github.com/SMerrony/EWItool/wiki</url>
+
+    <licenses>
+        <license>
+            <name>GNU General Public License v3.0</name>
+            <url>https://www.gnu.org/licenses/gpl-3.0.html</url>
+        </license>
+    </licenses>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <javafx.jar>${java.home}/lib/ext/jfxrt.jar</javafx.jar>
+    </properties>
+
+    <dependencies>
+        <!-- JavaFX is bundled with JDK 8; point to it as a system dependency.
+             Set JAVA_HOME to a JDK 8 installation before running 'mvn package'. -->
+        <dependency>
+            <groupId>javafx</groupId>
+            <artifactId>jfxrt</artifactId>
+            <version>8.0</version>
+            <scope>system</scope>
+            <systemPath>${javafx.jar}</systemPath>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                    <encoding>UTF-8</encoding>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.3.0</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>ewitool.Main</mainClass>
+                        </manifest>
+                        <manifestEntries>
+                            <Implementation-Title>EWItool</Implementation-Title>
+                            <Implementation-Version>${project.version}</Implementation-Version>
+                            <Implementation-Vendor>stephenmerrony.co.uk</Implementation-Vendor>
+                            <JavaFX-Version>8.0</JavaFX-Version>
+                            <Permissions>sandbox</Permissions>
+                            <Codebase>*</Codebase>
+                        </manifestEntries>
+                    </archive>
+                    <finalName>EWItool</finalName>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

@@ -1,0 +1,37 @@
+# Maven build output
+target/
+
+# Compiled class files
+*.class
+
+# Log files
+*.log
+
+# macOS metadata
+.DS_Store
+**/.DS_Store
+
+# IDE project files
+.idea/
+*.iml
+.eclipse/
+.settings/
+.classpath
+.project
+nbproject/
+nb-configuration.xml
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# IntelliJ IDEA
+*.idea/
+*.iws
+out/
+
+# Eclipse
+bin/
