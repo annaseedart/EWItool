@@ -34,8 +34,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 
-import javax.xml.bind.DatatypeConverter;
-
 import ewitool.Main.Status;
 
 public class EWI4000sPatch { 
@@ -314,11 +312,31 @@ public class EWI4000sPatch {
    */
   EWI4000sPatch( String hexString ) {
     this();
-    patchBlob = DatatypeConverter.parseHexBinary( hexString );
+    patchBlob = hexToBytes( hexString );
     decodeBlob();
     setEmpty( false );
   }
   
+  /** Converts a hexadecimal string (e.g. "0FA3...") to a byte array.
+   *  Replaces javax.xml.bind.DatatypeConverter.parseHexBinary() which was
+   *  removed from the JDK in Java 11.
+   */
+  private static byte[] hexToBytes( String hex ) {
+    if (hex.length() % 2 != 0) {
+      throw new IllegalArgumentException( "Hex string must have an even number of characters" );
+    }
+    byte[] data = new byte[hex.length() / 2];
+    for (int i = 0; i < hex.length(); i += 2) {
+      int hi = Character.digit( hex.charAt( i ),     16 );
+      int lo = Character.digit( hex.charAt( i + 1 ), 16 );
+      if (hi < 0 || lo < 0) {
+        throw new IllegalArgumentException( "Invalid hex character at position " + i );
+      }
+      data[i / 2] = (byte) ((hi << 4) + lo);
+    }
+    return data;
+  }
+
   public boolean isEmpty() { return empty; }
 
   public final void setEmpty( boolean empty ) { this.empty = empty; }

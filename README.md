@@ -14,8 +14,9 @@ The latest version may always be downloaded from here: https://github.com/SMerro
 
 ## Requirements
 
-- **Java Runtime Environment (JRE) 8** — JavaFX is bundled with Java 8, so no additional installation is needed.
-  - On macOS Sonoma, use [Azul Zulu JDK 8](https://www.azul.com/downloads/?version=java-8-lts&os=macos&package=jdk-fx) (includes JavaFX) or [Oracle JDK 8](https://www.oracle.com/java/technologies/downloads/#java8-mac).
+- **Java Runtime Environment (JRE) 11 or later** — JavaFX is no longer bundled with the JDK since Java 11, but the EWItool JAR bundles OpenJFX 21 (LTS) for all supported platforms (Linux x86-64, macOS Intel/Apple Silicon, Windows x86-64), so **no separate JavaFX installation is required**.
+  - Any standard JRE/JDK 11+ works, including [Eclipse Temurin](https://adoptium.net/), [Oracle JDK](https://www.oracle.com/java/technologies/downloads/), [Amazon Corretto](https://aws.amazon.com/corretto/), and [Azul Zulu](https://www.azul.com/downloads/).
+  - Java 22 (`java version "22.0.1"`) is fully supported.
 
 ## Running the pre-built JAR
 
@@ -33,7 +34,7 @@ On macOS you may also double-click the JAR file if `.jar` files are associated w
 
 ### Prerequisites
 
-- **JDK 8** with bundled JavaFX (e.g. [Azul Zulu JDK 8 with JavaFX](https://www.azul.com/downloads/?version=java-8-lts&package=jdk-fx))
+- **JDK 11 or later** (e.g. [Eclipse Temurin 21](https://adoptium.net/) or [Oracle JDK 22](https://www.oracle.com/java/technologies/downloads/)) — OpenJFX is fetched automatically by Maven.
 - **Apache Maven 3.6+**
 
 ### Build steps
@@ -43,8 +44,7 @@ On macOS you may also double-click the JAR file if `.jar` files are associated w
 git clone https://github.com/annaseedart/EWItool.git
 cd EWItool
 
-# Build the standalone JAR (requires JDK 8 as JAVA_HOME)
-export JAVA_HOME=/path/to/jdk8   # adjust to your JDK 8 installation
+# Build the standalone fat JAR (OpenJFX is downloaded automatically)
 mvn package
 ```
 
