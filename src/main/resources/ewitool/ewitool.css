@@ -16,32 +16,348 @@
  * @author Steve Merrony
  */
 
+/* ========================================================
+ * Low-vision-friendly dark theme
+ * Dark background (#1e1e1e), white bold text, high contrast
+ * ======================================================== */
+
 .root {
-    /* -fx-background: blue; */
+    -fx-base: #1e1e1e;
+    -fx-background: #1e1e1e;
+    -fx-control-inner-background: #2a2a2a;
+    -fx-control-inner-background-alt: #2e2e2e;
+    -fx-accent: #4fc3f7;
+    -fx-focus-color: #4fc3f7;
+    -fx-faint-focus-color: rgba(79,195,247,0.2);
+    -fx-text-base-color: white;
+    -fx-text-background-color: white;
+    -fx-text-fill: white;
+    -fx-font-size: 11pt;
+    -fx-font-weight: bold;
 }
 
+/* --- Global label style --- */
+.label {
+    -fx-text-fill: white;
+    -fx-font-size: 11pt;
+    -fx-font-weight: bold;
+}
+
+/* --- Tabs --- */
+.tab-pane {
+    -fx-background-color: #1e1e1e;
+    -fx-tab-min-height: 8mm;
+}
+.tab-pane .tab-header-area {
+    -fx-background-color: #1e1e1e;
+}
+.tab-pane .tab-header-area .headers-region .tab {
+    -fx-background-color: #2d2d2d;
+    -fx-background-insets: 0;
+    -fx-padding: 3mm 5mm 3mm 5mm;
+}
+.tab-pane .tab-header-area .headers-region .tab:selected {
+    -fx-background-color: #3a3a3a;
+}
+.tab-pane .tab-header-area .headers-region .tab .tab-label {
+    -fx-text-fill: white;
+    -fx-font-size: 11pt;
+    -fx-font-weight: bold;
+}
+.tab-pane .tab-content-area {
+    -fx-background-color: #1e1e1e;
+}
+
+/* --- Buttons --- */
+.button {
+    -fx-background-color: #3a3a3a;
+    -fx-text-fill: white;
+    -fx-font-size: 11pt;
+    -fx-font-weight: bold;
+    -fx-border-color: #888888;
+    -fx-border-width: 1px;
+    -fx-border-radius: 3px;
+    -fx-background-radius: 3px;
+    -fx-padding: 2mm 4mm 2mm 4mm;
+}
+.button:hover {
+    -fx-background-color: #555555;
+}
+.button:pressed {
+    -fx-background-color: #4fc3f7;
+    -fx-text-fill: #1e1e1e;
+}
+.button:disabled {
+    -fx-opacity: 0.4;
+}
+
+/* --- ComboBox --- */
+.combo-box {
+    -fx-background-color: #2a2a2a;
+    -fx-border-color: #888888;
+    -fx-border-radius: 3px;
+    -fx-background-radius: 3px;
+}
+.combo-box .cell {
+    -fx-text-fill: white;
+    -fx-font-size: 11pt;
+    -fx-font-weight: bold;
+    -fx-background-color: #2a2a2a;
+}
+.combo-box-popup .list-view {
+    -fx-background-color: #2a2a2a;
+    -fx-border-color: #888888;
+}
+.combo-box-popup .list-view .list-cell {
+    -fx-background-color: #2a2a2a;
+    -fx-text-fill: white;
+    -fx-font-size: 11pt;
+    -fx-font-weight: bold;
+}
+.combo-box-popup .list-view .list-cell:filled:hover {
+    -fx-background-color: #4fc3f7;
+    -fx-text-fill: #1e1e1e;
+}
+.combo-box-popup .list-view .list-cell:filled:selected {
+    -fx-background-color: #3d8fb5;
+    -fx-text-fill: white;
+}
+
+/* --- ChoiceBox --- */
+.choice-box {
+    -fx-background-color: #2a2a2a;
+    -fx-border-color: #888888;
+    -fx-border-radius: 3px;
+    -fx-background-radius: 3px;
+}
+.choice-box .label {
+    -fx-text-fill: white;
+    -fx-font-size: 11pt;
+    -fx-font-weight: bold;
+}
+.choice-box-popup .menu-item {
+    -fx-background-color: #2a2a2a;
+}
+.choice-box-popup .menu-item .label {
+    -fx-text-fill: white;
+    -fx-font-size: 11pt;
+}
+
+/* --- ListView --- */
+.list-view {
+    -fx-background-color: #2a2a2a;
+    -fx-border-color: #888888;
+}
+.list-cell {
+    -fx-background-color: #2a2a2a;
+    -fx-text-fill: white;
+    -fx-font-size: 11pt;
+    -fx-font-weight: bold;
+}
+.list-cell:filled:hover {
+    -fx-background-color: #3a3a3a;
+}
+.list-cell:filled:selected {
+    -fx-background-color: #4fc3f7;
+    -fx-text-fill: #1e1e1e;
+}
+
+/* --- TextField / TextArea --- */
+.text-field, .text-area {
+    -fx-background-color: #2a2a2a;
+    -fx-text-fill: white;
+    -fx-font-size: 11pt;
+    -fx-font-weight: bold;
+    -fx-border-color: #888888;
+    -fx-border-radius: 3px;
+    -fx-background-radius: 3px;
+    -fx-prompt-text-fill: #aaaaaa;
+}
+.text-area .content {
+    -fx-background-color: #2a2a2a;
+}
+
+/* --- CheckBox --- */
+.check-box {
+    -fx-text-fill: white;
+    -fx-font-size: 11pt;
+    -fx-font-weight: bold;
+}
+.check-box .box {
+    -fx-background-color: #2a2a2a;
+    -fx-border-color: #888888;
+    -fx-border-radius: 2px;
+    -fx-background-radius: 2px;
+}
+.check-box:selected .mark {
+    -fx-background-color: #4fc3f7;
+}
+
+/* --- RadioButton --- */
+.radio-button {
+    -fx-text-fill: white;
+    -fx-font-size: 11pt;
+    -fx-font-weight: bold;
+}
+.radio-button .radio {
+    -fx-background-color: #2a2a2a;
+    -fx-border-color: #888888;
+}
+.radio-button:selected .dot {
+    -fx-background-color: #4fc3f7;
+}
+
+/* --- Slider --- */
+.slider .track {
+    -fx-background-color: #555555;
+    -fx-border-color: #888888;
+    -fx-border-radius: 2px;
+    -fx-background-radius: 2px;
+}
+.slider .thumb {
+    -fx-background-color: #4fc3f7;
+    -fx-border-color: #888888;
+}
+.slider .thumb:hover {
+    -fx-background-color: #81d4fa;
+}
+
+/* --- Menu --- */
+.menu-bar {
+    -fx-background-color: #2d2d2d;
+    -fx-padding: 1mm;
+}
+.menu-bar .menu {
+    -fx-background-color: transparent;
+    -fx-padding: 1mm 2mm 1mm 2mm;
+}
+.menu-bar .menu:hover,
+.menu-bar .menu:focused,
+.menu-bar .menu:showing {
+    -fx-background-color: #4a4a4a;
+    -fx-background-radius: 3px;
+}
+.menu-bar .menu .label {
+    -fx-text-fill: white;
+    -fx-font-size: 11pt;
+    -fx-font-weight: bold;
+}
+.context-menu {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #888888;
+}
+.menu-item {
+    -fx-background-color: transparent;
+    -fx-padding: 1mm 3mm 1mm 3mm;
+}
+.menu-item:focused {
+    -fx-background-color: #4fc3f7;
+}
+.menu-item .label {
+    -fx-text-fill: white;
+    -fx-font-size: 11pt;
+    -fx-font-weight: bold;
+}
+.menu-item:focused .label {
+    -fx-text-fill: #1e1e1e;
+}
+.menu-item:disabled .label {
+    -fx-text-fill: #999999;
+}
+.separator .line {
+    -fx-border-color: #555555;
+}
+
+/* --- ScrollPane / ScrollBar --- */
+.scroll-pane {
+    -fx-background-color: #1e1e1e;
+}
+.scroll-pane .viewport {
+    -fx-background-color: #1e1e1e;
+}
+.scroll-bar {
+    -fx-background-color: #2a2a2a;
+}
+.scroll-bar .thumb {
+    -fx-background-color: #555555;
+    -fx-background-radius: 3px;
+}
+.scroll-bar .thumb:hover {
+    -fx-background-color: #777777;
+}
+.scroll-bar .increment-button,
+.scroll-bar .decrement-button {
+    -fx-background-color: #2a2a2a;
+}
+.scroll-bar .increment-arrow,
+.scroll-bar .decrement-arrow {
+    -fx-background-color: #aaaaaa;
+}
+
+/* --- Dialogs / Alerts --- */
+.dialog-pane {
+    -fx-background-color: #1e1e1e;
+}
+.dialog-pane .content.label {
+    -fx-font-size: 12pt;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+.dialog-pane .header-panel {
+    -fx-background-color: #2d2d2d;
+}
+.dialog-pane .header-panel .label {
+    -fx-font-size: 13pt;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+/* ========================================================
+ * Status bar
+ * ======================================================== */
+
 #status-bar {
-    -fx-background-color: lightgray;
-    -fx-padding: 2px;
+    -fx-background-color: #2d2d2d;
+    -fx-padding: 2mm;
+    -fx-spacing: 2mm;
 }
 
 #status-bar .label {
-    -fx-font-size: 8pt;
+    -fx-font-size: 11pt;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
     -fx-label-padding: 0.0 1mm 0.0 1mm;
 }
 
 #status-value {
-    -fx-background-color: white;
-    -fx-border-radius: 6mm; 
+    -fx-background-color: #3a3a3a;
+    -fx-text-fill: #4fc3f7;
+    -fx-font-size: 11pt;
+    -fx-font-weight: bold;
+    -fx-border-color: #666666;
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+    -fx-padding: 1mm 2mm 1mm 2mm;
 }
 
 #status-message {
-    -fx-background-color: white;
+    -fx-background-color: #3a3a3a;
+    -fx-text-fill: #ffeb3b;
+    -fx-font-size: 11pt;
+    -fx-font-weight: bold;
     -fx-min-width: 80mm;
-    -fx-border-radius: 6mm; 
+    -fx-border-color: #666666;
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+    -fx-padding: 1mm 2mm 1mm 2mm;
 }
 
+/* ========================================================
+ * Scratchpad
+ * ======================================================== */
+
 #scratchpad-grid {
+    -fx-background-color: #1e1e1e;
     -fx-padding: 10mm;
     -fx-hgap: 3mm;
     -fx-vgap: 3mm;
@@ -50,88 +366,125 @@
     -fx-min-width: 25mm;
 }
 
+/* ========================================================
+ * Patch Sets library
+ * ======================================================== */
+
 #patchset-library-grid {
+    -fx-background-color: #1e1e1e;
     -fx-padding: 10mm;
     -fx-hgap: 3mm;
     -fx-vgap: 3mm;
 }
 
 #patchset-library-grid .label {
-    -fx-font: bold 9pt sans;
+    -fx-font: bold 11pt sans;
+    -fx-text-fill: white;
     -fx-alignment: top-left;
 }
 
+/* ========================================================
+ * EPX
+ * ======================================================== */
+
 #epx-grid {
+    -fx-background-color: #1e1e1e;
     -fx-padding: 10mm;
     -fx-hgap: 3mm;
     -fx-vgap: 3mm;
 }
 
 #epx-query-grid {
+    -fx-background-color: #1e1e1e;
     -fx-hgap: 3mm;
     -fx-vgap: 3mm;
 }
 
 #epx-settings-grid {
+    -fx-background-color: #1e1e1e;
     -fx-hgap: 3mm;
     -fx-vgap: 3mm;
 }
 
 #epx-details-grid {
+    -fx-background-color: #1e1e1e;
     -fx-hgap: 3mm;
     -fx-vgap: 3mm;
 }
 
 #epx-section-label {
-    -fx-font: bold 9pt sans;
+    -fx-font: bold 12pt sans;
+    -fx-text-fill: #4fc3f7;
     -fx-alignment: top-left;
 }
 
 #epx-submit-grid {
+    -fx-background-color: #1e1e1e;
     -fx-padding: 10mm;
     -fx-hgap: 3mm;
     -fx-vgap: 3mm;
 }
 
+/* ========================================================
+ * Current patch set
+ * ======================================================== */
+
 /* non-standard settings for this grid as there is so much on it */
 #current-patch-set-grid {
+    -fx-background-color: #1e1e1e;
     -fx-padding: 1mm;
     -fx-hgap: 2mm;
     -fx-vgap: 1mm;
 }
 
 #current-patch-set-grid-dropover {
-    -fx-background-color: lightgreen;
+    -fx-background-color: #69f0ae;
+    -fx-text-fill: #1e1e1e;
 }
 
+/* ========================================================
+ * Patch Editor
+ * ======================================================== */
+
 #editor-header-box {
-    -fx-padding: 2;
-    -fx-spacing: 2;
-    /* -fx-background-color: lightgray; */
+    -fx-background-color: #2d2d2d;
+    -fx-padding: 2mm;
+    -fx-spacing: 2mm;
 }
 
 #editor-outer-grid {
+    -fx-background-color: #1e1e1e;
     -fx-padding: 1mm;
 }
+
 /* each area of the Patch Editor is an editor-grid */
 #editor-grid {
-    -fx-border-color: darkgray;
+    -fx-background-color: #252525;
+    -fx-border-color: #666666;
+    -fx-border-width: 1px;
     -fx-padding: 2px;
     -fx-pref-width: 25mm;
     -fx-alignment: center;
 }
 
 #editor-section-label {
-    -fx-font: bold 9pt sans;
-    -fx-alignment: top-left!important;
+    -fx-font: bold 11pt sans;
+    -fx-text-fill: #4fc3f7;
+    -fx-alignment: top-left;
 }
 
 #editor-group-label {
-    -fx-font-style:italic;
+    -fx-font-style: italic;
+    -fx-font-weight: bold;
+    -fx-font-size: 11pt;
+    -fx-text-fill: #cccccc;
 }
+
 #editor-control-label {
     -fx-min-width: 9mm;
-    -fx-font-size: 8pt;
+    -fx-font-size: 11pt;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
 }
 
 #editor-grid .slider:vertical {
@@ -139,11 +492,6 @@
     -fx-min-width: 5mm;
     -fx-block-increment: 1;
 }
-/* 
- * #editor-grid .slider:vertical > .thumb {
-        -fx-shape: "M0, 0L5, 0L10, 5L5, 10L0, 10 Z";
-}
-*/
 
 /* ??? strangeness: no selector seems to select :horizontal */
 #editor-grid .slider {
@@ -151,19 +499,20 @@
     -fx-min-width: 15mm;
     -fx-block-increment: 1;
 }
-/*
-#editor-grid .slider > .thumb {
-        -fx-shape: "M0, 0L10, 0L10, 5L5, 10L0, 5 Z";
-}
-*/
+
+/* ========================================================
+ * Key Patches
+ * ======================================================== */
 
 #key-patches-grid {
+    -fx-background-color: #1e1e1e;
     -fx-padding: 10mm;
     -fx-hgap: 3mm;
     -fx-vgap: 3mm;
 }
 #key-patches-header {
-    -fx-font: bold 11pt sans;
+    -fx-font: bold 12pt sans;
+    -fx-text-fill: #4fc3f7;
     -fx-min-width: 20mm;
     -fx-alignment: center;
 }
