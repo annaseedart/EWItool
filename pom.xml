@@ -23,20 +23,116 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <javafx.jar>${java.home}/lib/ext/jfxrt.jar</javafx.jar>
+        <!-- Java 11 bytecode runs on Java 11-22+ and is required by OpenJFX 11+. -->
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+        <!-- OpenJFX 21 (LTS) supports Java 11 through 22+. -->
+        <javafx.version>21.0.3</javafx.version>
     </properties>
 
     <dependencies>
-        <!-- JavaFX is bundled with JDK 8; point to it as a system dependency.
-             Set JAVA_HOME to a JDK 8 installation before running 'mvn package'. -->
+        <!--
+          OpenJFX replaces the JDK-8-bundled JavaFX that was removed in Java 11.
+          Three modules cover all imports used by this application:
+            javafx-base     : application, beans, collections, concurrent, event, util
+            javafx-graphics : scene, layout, geometry, stage, print, image, input
+            javafx-controls : scene.control
+          The no-classifier JARs supply platform-independent bytecode.
+          The platform classifier JARs supply the native rendering libraries
+          needed to run on each OS; all are bundled into the fat JAR so that
+          users can simply run  java -jar EWItool.jar  on any platform.
+        -->
         <dependency>
-            <groupId>javafx</groupId>
-            <artifactId>jfxrt</artifactId>
-            <version>8.0</version>
-            <scope>system</scope>
-            <systemPath>${javafx.jar}</systemPath>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-base</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-graphics</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+
+        <!-- Linux x86-64 native libraries -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-base</artifactId>
+            <version>${javafx.version}</version>
+            <classifier>linux</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-graphics</artifactId>
+            <version>${javafx.version}</version>
+            <classifier>linux</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>${javafx.version}</version>
+            <classifier>linux</classifier>
+        </dependency>
+        <!-- macOS x86-64 (Intel) native libraries -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-base</artifactId>
+            <version>${javafx.version}</version>
+            <classifier>mac</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-graphics</artifactId>
+            <version>${javafx.version}</version>
+            <classifier>mac</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>${javafx.version}</version>
+            <classifier>mac</classifier>
+        </dependency>
+        <!-- macOS AArch64 (Apple Silicon) native libraries -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-base</artifactId>
+            <version>${javafx.version}</version>
+            <classifier>mac-aarch64</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-graphics</artifactId>
+            <version>${javafx.version}</version>
+            <classifier>mac-aarch64</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>${javafx.version}</version>
+            <classifier>mac-aarch64</classifier>
+        </dependency>
+        <!-- Windows x86-64 native libraries -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-base</artifactId>
+            <version>${javafx.version}</version>
+            <classifier>win</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-graphics</artifactId>
+            <version>${javafx.version}</version>
+            <classifier>win</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>${javafx.version}</version>
+            <classifier>win</classifier>
         </dependency>
     </dependencies>
 
@@ -47,32 +143,68 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.11.0</version>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <source>11</source>
+                    <target>11</target>
                     <encoding>UTF-8</encoding>
                 </configuration>
             </plugin>
 
+            <!--
+              maven-shade-plugin bundles all dependencies (including the
+              platform-specific OpenJFX native-library JARs) into a single
+              self-contained fat JAR.
+
+              The manifest Main-Class is set to ewitool.Launcher, NOT
+              ewitool.Main.  This is intentional: Java 11+ refuses to load a
+              class that directly extends javafx.application.Application as
+              the JAR entry point unless JavaFX is on the *module path*.
+              Launcher is a plain class with no JavaFX supertype, so the JVM
+              accepts it from the classpath; it then delegates to Main.main()
+              which calls Application.launch() normally.
+            -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>3.3.0</version>
-                <configuration>
-                    <archive>
-                        <manifest>
-                            <mainClass>ewitool.Main</mainClass>
-                        </manifest>
-                        <manifestEntries>
-                            <Implementation-Title>EWItool</Implementation-Title>
-                            <Implementation-Version>${project.version}</Implementation-Version>
-                            <Implementation-Vendor>stephenmerrony.co.uk</Implementation-Vendor>
-                            <JavaFX-Version>8.0</JavaFX-Version>
-                            <Permissions>sandbox</Permissions>
-                            <Codebase>*</Codebase>
-                        </manifestEntries>
-                    </archive>
-                    <finalName>EWItool</finalName>
-                </configuration>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.5.3</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <outputFile>${project.build.directory}/EWItool.jar</outputFile>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>ewitool.Launcher</mainClass>
+                                    <manifestEntries>
+                                        <Implementation-Title>EWItool</Implementation-Title>
+                                        <Implementation-Version>${project.version}</Implementation-Version>
+                                        <Implementation-Vendor>stephenmerrony.co.uk</Implementation-Vendor>
+                                    </manifestEntries>
+                                </transformer>
+                            </transformers>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <!-- Strip JAR signing metadata that breaks the shaded JAR. -->
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                        <!--
+                                          Exclude module-info.class from all JARs: the fat JAR is
+                                          not a named module, so stale module descriptors from
+                                          individual dependency JARs would cause conflicts.
+                                        -->
+                                        <exclude>module-info.class</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
