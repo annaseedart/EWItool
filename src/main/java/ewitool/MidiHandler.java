@@ -20,6 +20,8 @@
 
 package ewitool;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -30,6 +32,7 @@ import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Receiver;
 import javax.sound.midi.Sequencer;
 import javax.sound.midi.Synthesizer;
+import javax.sound.midi.Transmitter;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 
@@ -84,6 +87,7 @@ public class MidiHandler {
   UserPrefs userPrefs;
   Thread sendThread;
   MidiDevice inDev = null, outDev = null;
+  Transmitter midiTransmitter = null;
   Receiver midiIn;
   
   MidiDevice.Info[] infos;
@@ -181,10 +185,16 @@ public class MidiHandler {
                 errAlert( "Error - MidiHandler() could not open chosen MIDI IN device" );
               }
               midiIn = new MidiReceiver( sharedData );
-              inDev.getTransmitter().setReceiver( midiIn );
-              Debugger.log( "Debug - IN Port: " + infos[d].getName() );
-              final String inName = infos[d].getName();
-              Platform.runLater( () -> sharedData.setMidiInDev( inName ) );
+              try {
+                midiTransmitter = inDev.getTransmitter();
+                midiTransmitter.setReceiver( midiIn );
+                Debugger.log( "Debug - IN Port: " + infos[d].getName() );
+                final String inName = infos[d].getName();
+                Platform.runLater( () -> sharedData.setMidiInDev( inName ) );
+              } catch( MidiUnavailableException e ) {
+                e.printStackTrace();
+                errAlert( "Error - MidiHandler() could not obtain transmitter for chosen MIDI IN device" );
+              }
             }
           }
         }  
@@ -211,22 +221,158 @@ public class MidiHandler {
       } catch( InterruptedException e ) {
       }
     }
-    if (inDev !=null && inDev.isOpen()) { midiIn.close(); inDev.close(); }
+    sendThread = null;
+    if (midiTransmitter != null) { midiTransmitter.close(); midiTransmitter = null; }
+    if (midiIn != null) { midiIn.close(); midiIn = null; }
+    if (inDev != null && inDev.isOpen()) { inDev.close(); }
+    inDev = null;
+    if (outDev != null && outDev.isOpen()) { outDev.close(); }
+    outDev = null;
     sharedData.setEwiAttached( false );
   }
 
   public void restart() {
     close();
-    scanAndOpenMIDIPorts();   
-    /* this is just a nice-to-have... */
-    if (inDev != null && outDev != null)
-      if (inDev.isOpen() && outDev.isOpen()) {
-        requestDeviceID();
-    }
+    /* Run port scanning in a background thread for the same reason as the
+     * constructor — CoreMidi4J on macOS can deadlock if called on the FX thread.
+     */
+    Task<Void> rt = new Task<Void>() {
+      @Override
+      protected Void call() throws Exception {
+        scanAndOpenMIDIPorts();
+        /* this is just a nice-to-have... */
+        if (inDev != null && outDev != null)
+          if (inDev.isOpen() && outDev.isOpen()) {
+            requestDeviceID();
+        }
+        return null;
+      }
+    };
+    new Thread( rt ).start();
   }
 
   void clearPatches() {
     sharedData.clear();
+  }
+
+  /**
+   * Returns a list of all available MIDI port names that are not pure
+   * software Sequencer or Synthesizer devices.  Devices that support
+   * receivers (MIDI OUT) are returned first, followed by devices that
+   * only support transmitters (MIDI IN only).
+   *
+   * This is used by the Ports dialog and the auto-detect routine.
+   * 
+   * @param wantReceivers  true to return OUT-capable ports
+   * @param wantTransmitters true to return IN-capable ports
+   * @return list of device info objects
+   */
+  public List<MidiDevice.Info> getAvailablePorts( boolean wantReceivers, boolean wantTransmitters ) {
+    List<MidiDevice.Info> result = new ArrayList<>();
+    MidiDevice.Info[] all = MidiSystem.getMidiDeviceInfo();
+    for (MidiDevice.Info info : all) {
+      try {
+        MidiDevice dev = MidiSystem.getMidiDevice( info );
+        if (dev instanceof Sequencer || dev instanceof Synthesizer) continue;
+        boolean hasRecv = dev.getMaxReceivers() != 0;
+        boolean hasTrans = dev.getMaxTransmitters() != 0;
+        if (wantReceivers && hasRecv) { result.add( info ); continue; }
+        if (wantTransmitters && hasTrans && !result.contains( info )) result.add( info );
+      } catch( MidiUnavailableException e ) {
+        // skip unavailable devices
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Attempt to automatically detect the EWI4000s by probing every
+   * combination of available MIDI IN and OUT ports with a Universal
+   * Device Identity Request.  On success the matching port names are
+   * saved to UserPrefs (triggering reconnection via the property change
+   * listeners) and the method returns true.  On failure it returns false.
+   *
+   * This method blocks while probing and must not be called on the JavaFX
+   * Application Thread.  Wrap it in a {@link Task} if you need to call it
+   * from a UI event handler.
+   *
+   * @return true if an EWI4000s was found, false otherwise
+   */
+  public synchronized boolean autoDetectEWI() {
+    Debugger.log( "DEBUG - MidiHandler: starting auto-detect scan" );
+
+    MidiDevice.Info[] all = MidiSystem.getMidiDeviceInfo();
+
+    for (MidiDevice.Info outInfo : all) {
+      MidiDevice candidateOut;
+      try {
+        candidateOut = MidiSystem.getMidiDevice( outInfo );
+        if (candidateOut instanceof Sequencer || candidateOut instanceof Synthesizer) continue;
+        if (candidateOut.getMaxReceivers() == 0) continue;
+      } catch( MidiUnavailableException e ) {
+        continue;
+      }
+
+      for (MidiDevice.Info inInfo : all) {
+        MidiDevice candidateIn;
+        try {
+          candidateIn = MidiSystem.getMidiDevice( inInfo );
+          if (candidateIn instanceof Sequencer || candidateIn instanceof Synthesizer) continue;
+          if (candidateIn.getMaxTransmitters() == 0) continue;
+        } catch( MidiUnavailableException e ) {
+          continue;
+        }
+
+        Debugger.log( "DEBUG - MidiHandler: probing OUT=" + outInfo.getName() + " IN=" + inInfo.getName() );
+
+        // Temporarily open this pair and test it
+        MidiDevice probeOut = null;
+        MidiDevice probeIn = null;
+        Transmitter probeTx = null;
+        try {
+          probeOut = MidiSystem.getMidiDevice( outInfo );
+          probeOut.open();
+
+          probeIn = MidiSystem.getMidiDevice( inInfo );
+          probeIn.open();
+
+          SharedData probeData = new SharedData();
+          MidiReceiver probeReceiver = new MidiReceiver( probeData );
+          probeTx = probeIn.getTransmitter();
+          probeTx.setReceiver( probeReceiver );
+
+          // Build and send Universal Device Identity Request
+          Receiver probeOutReceiver = probeOut.getReceiver();
+          byte[] idReq = new byte[]{
+            MIDI_SYSEX_HEADER, MIDI_SYSEX_NONREALTIME, MIDI_SYSEX_ALLCHANNELS,
+            MIDI_SYSEX_GEN_INFO, MIDI_SYSEX_ID_REQ, MIDI_SYSEX_TRAILER
+          };
+          javax.sound.midi.SysexMessage idMsg = new javax.sound.midi.SysexMessage( idReq, idReq.length );
+          probeOutReceiver.send( idMsg, -1 );
+          probeOutReceiver.close();
+
+          // Wait up to MIDI_TIMEOUT_MS for a Device ID response
+          SharedData.DeviceIdResponse resp = probeData.deviceIdQ.poll( MIDI_TIMEOUT_MS, TimeUnit.MILLISECONDS );
+          if (resp == SharedData.DeviceIdResponse.IS_EWI4000S) {
+            Debugger.log( "DEBUG - MidiHandler: EWI4000s found: OUT=" + outInfo.getName() + " IN=" + inInfo.getName() );
+            // Save to prefs — this fires the listeners in Main which call restart()
+            // We update them here manually so the flag is set before restart runs.
+            userPrefs.setMidiOutPort( outInfo.getName() );
+            userPrefs.setMidiInPort( inInfo.getName() );
+            return true;
+          }
+        } catch( Exception e ) {
+          Debugger.log( "DEBUG - MidiHandler: probe exception for OUT=" + outInfo.getName() + " IN=" + inInfo.getName() + ": " + e.getMessage() );
+        } finally {
+          if (probeTx != null) try { probeTx.close(); } catch( Exception ignore ) {}
+          if (probeIn != null && probeIn.isOpen()) try { probeIn.close(); } catch( Exception ignore ) {}
+          if (probeOut != null && probeOut.isOpen()) try { probeOut.close(); } catch( Exception ignore ) {}
+        }
+      }
+    }
+
+    Debugger.log( "DEBUG - MidiHandler: auto-detect scan found no EWI4000s" );
+    return false;
   }
 
   /**
