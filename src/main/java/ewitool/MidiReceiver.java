@@ -55,43 +55,53 @@ public class MidiReceiver implements Receiver {
       }
 
       if (messageBytes[0] == MidiHandler.MIDI_SYSEX_AKAI_ID && 
-          messageBytes[1] == MidiHandler.MIDI_SYSEX_AKAI_EWI4K /* &&
-	        messageBytes[2] == MidiHandler.MIDI_SYSEX_ALLCHANNELS */
+          messageBytes[1] == MidiHandler.MIDI_SYSEX_AKAI_EWI4K
          ) { // PATCH or QuickPC
 
         if (messageBytes[3] == MidiHandler.MIDI_PRESET_DUMP) {
-          if (messageBytes.length != (MidiHandler.EWI_SYSEX_PRESET_DUMP_LEN - 1)) {
+          // Some MIDI drivers include the trailing 0xF7 in getData(); strip it for length check
+          int patchDataLen = messageBytes.length;
+          if (patchDataLen > 0 && messageBytes[patchDataLen - 1] == MidiHandler.MIDI_SYSEX_TRAILER) {
+            patchDataLen--;
+          }
+          // patchBlob is EWI_SYSEX_PRESET_DUMP_LEN bytes: F0 + (EWI_SYSEX_PRESET_DUMP_LEN-2) data bytes + F7
+          if (patchDataLen != (MidiHandler.EWI_SYSEX_PRESET_DUMP_LEN - 2)) {
             System.err.println( "Error - Invalid preset dump SysEx received from EWI (" + messageBytes.length + " bytes)" );
             return;
           }
           // PATCH...
           EWI4000sPatch thisPatch = new EWI4000sPatch();
-          thisPatch.patchBlob[0] = (byte) 0b11110000; // 0xf0
-          for (int b = 0; b < (MidiHandler.EWI_SYSEX_PRESET_DUMP_LEN - 1); b++) thisPatch.patchBlob[b+1] = messageBytes[b];
-          thisPatch.patchBlob[MidiHandler.EWI_SYSEX_PRESET_DUMP_LEN - 1] = (byte) 0b11110111; // 0xf7
+          thisPatch.patchBlob[0] = (byte) 0xf0;
+          for (int b = 0; b < patchDataLen; b++) thisPatch.patchBlob[b+1] = messageBytes[b];
+          thisPatch.patchBlob[MidiHandler.EWI_SYSEX_PRESET_DUMP_LEN - 1] = (byte) 0xf7;
           thisPatch.decodeBlob();
-          if (thisPatch.header[3] == MidiHandler.MIDI_SYSEX_ALLCHANNELS) {
-            int thisPatchNum = thisPatch.internalPatchNum;   
-            if (thisPatchNum < 0 || thisPatchNum >= EWI4000sPatch.EWI_NUM_PATCHES) {
-              System.err.println( "Error - Invalid patch number (" + thisPatchNum + ") received from EWI");
-            } else {
-              // adjust thisPatchNum to be displayed version of the patch number
-              if (thisPatchNum == 99)
-                thisPatchNum = 0;
-              else
-                thisPatchNum++;
-              sharedData.ewiPatchList[thisPatchNum] = thisPatch ;
-              if (thisPatchNum == 99) sharedData.setLastPatchLoaded( thisPatchNum );
-              sharedData.patchQ.add( thisPatchNum );
-              Debugger.log( "DEBUG - MidiReceiver: Patch number: " + thisPatchNum + " received" );
-            }
+          // Accept patches regardless of the SysEx channel byte (may be 0x00 or 0x7F
+          // depending on firmware version and how the request was issued)
+          int thisPatchNum = thisPatch.internalPatchNum;   
+          if (thisPatchNum < 0 || thisPatchNum >= EWI4000sPatch.EWI_NUM_PATCHES) {
+            System.err.println( "Error - Invalid patch number (" + thisPatchNum + ") received from EWI");
+          } else {
+            // adjust thisPatchNum to be displayed version of the patch number
+            if (thisPatchNum == 99)
+              thisPatchNum = 0;
+            else
+              thisPatchNum++;
+            sharedData.ewiPatchList[thisPatchNum] = thisPatch ;
+            if (thisPatchNum == 99) sharedData.setLastPatchLoaded( thisPatchNum );
+            sharedData.patchQ.add( thisPatchNum );
+            Debugger.log( "DEBUG - MidiReceiver: Patch number: " + thisPatchNum + " received" );
           }
           return;
         }
 
         if (messageBytes[3] == MidiHandler.MIDI_QUICKPC_DUMP) {
-          if (messageBytes.length != (MidiHandler.EWI_SYSEX_QUICKPC_DUMP_LEN - 1)) {
-            System.err.println( "Error - Invalid preset QuickPC dump SysEx received from EWI (" + messageBytes.length + " bytes)" );
+          // Strip trailing F7 if present before length check
+          int qpcDataLen = messageBytes.length;
+          if (qpcDataLen > 0 && messageBytes[qpcDataLen - 1] == MidiHandler.MIDI_SYSEX_TRAILER) {
+            qpcDataLen--;
+          }
+          if (qpcDataLen != (MidiHandler.EWI_SYSEX_QUICKPC_DUMP_LEN - 2)) {
+            System.err.println( "Error - Invalid QuickPC dump SysEx received from EWI (" + messageBytes.length + " bytes)" );
             return;
           }
           // QUICKPC...
@@ -107,15 +117,24 @@ public class MidiReceiver implements Receiver {
           messageBytes.length >= 4 &&
           messageBytes[2] == MidiHandler.MIDI_SYSEX_GEN_INFO &&
           messageBytes[3] == MidiHandler.MIDI_SYSEX_ID) { // DEVICE ID REPLY
-        if (messageBytes.length != (MidiHandler.EWI_SYSEX_ID_RESPONSE_LEN - 1)) {
+        // Some MIDI drivers include the trailing 0xF7 in getData(); normalise before
+        // checking the length so detection works regardless of driver behaviour.
+        int idLen = messageBytes.length;
+        if (idLen > 0 && messageBytes[idLen - 1] == MidiHandler.MIDI_SYSEX_TRAILER) {
+          idLen--;
+        }
+        if (idLen != (MidiHandler.EWI_SYSEX_ID_RESPONSE_LEN - 1)) {
+          Debugger.log( "DEBUG - MidiReceiver: Device ID response wrong length: " + messageBytes.length );
           sharedData.deviceIdQ.add( SharedData.DeviceIdResponse.WRONG_LENGTH );
           return;
         }
         if (messageBytes[4] != MidiHandler.MIDI_SYSEX_AKAI_ID) {
+          Debugger.log( "DEBUG - MidiReceiver: Device ID response is not Akai (byte[4]=0x" + Integer.toHexString(messageBytes[4] & 0xFF) + ")" );
           sharedData.deviceIdQ.add( SharedData.DeviceIdResponse.NOT_AKAI );
           return;
         }
         if (messageBytes[5] != MidiHandler.MIDI_SYSEX_AKAI_EWI4K) {
+          Debugger.log( "DEBUG - MidiReceiver: Device ID response is not EWI4000s (byte[5]=0x" + Integer.toHexString(messageBytes[5] & 0xFF) + ")" );
           sharedData.deviceIdQ.add( SharedData.DeviceIdResponse.NOT_EWI4000S );
           return;
         }
@@ -129,9 +148,10 @@ public class MidiReceiver implements Receiver {
         return;
       }
 
-      System.err.println( "Warning - Unrecognised SysEx type of length " + messageBytes.length + 
-                          " received from EWI, starting: " + messageBytes[0] + " " + messageBytes[1] + 
-                          " " + messageBytes[2] );
+      Debugger.log( "DEBUG - MidiReceiver: Unrecognised SysEx (length=" + messageBytes.length + 
+                    ") starting: 0x" + Integer.toHexString(messageBytes[0] & 0xFF) +
+                    " 0x" + Integer.toHexString(messageBytes[1] & 0xFF) +
+                    " 0x" + Integer.toHexString(messageBytes[2] & 0xFF) );
     }
   }
 

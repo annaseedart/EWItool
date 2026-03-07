@@ -166,7 +166,7 @@ public class Main extends Application {
     Menu fileMenu, midiMenu, ewiMenu, helpMenu;
     Menu generateSubmenu, processSubmenu;
     MenuItem exitItem,
-    portsItem, // panicItem, // monitorItem,
+    portsItem, autoDetectItem, // panicItem, // monitorItem,
     fetchAllItem,
     storeItem, revertItem, copyItem,
     helpItem, aboutItem;
@@ -187,13 +187,43 @@ public class Main extends Application {
 
       midiMenu = new Menu( "_MIDI" );
       portsItem = new MenuItem( "_Ports" );
-      portsItem.addEventHandler( ActionEvent.ANY, new PortsItemEventHandler( userPrefs ) );
-      //panicItem = new MenuItem( "Panic (All Notes Off)" );
+      portsItem.addEventHandler( ActionEvent.ANY, new PortsItemEventHandler( userPrefs, midiHandler ) );
+
+      autoDetectItem = new MenuItem( "_Auto-detect EWI4000s" );
+      autoDetectItem.setOnAction( (ae) -> {
+        autoDetectItem.setDisable( true );
+        javafx.concurrent.Task<Boolean> scanTask = new javafx.concurrent.Task<Boolean>() {
+          @Override
+          protected Boolean call() {
+            return midiHandler.autoDetectEWI();
+          }
+        };
+        scanTask.setOnSucceeded( ev -> {
+          autoDetectItem.setDisable( false );
+          if (scanTask.getValue()) {
+            Alert ok = new Alert( AlertType.INFORMATION,
+              "EWI4000s detected and ports configured automatically." );
+            ok.setTitle( "EWItool - Auto-detect" );
+            ok.setHeaderText( null );
+            ok.initOwner( mainStage );
+            ok.showAndWait();
+          } else {
+            Alert err = new Alert( AlertType.WARNING,
+              "No EWI4000s was found on any available MIDI port.\n\nMake sure the EWI4000s is switched on and connected via USB, then try again.\nYou can also select ports manually via MIDI → Ports." );
+            err.setTitle( "EWItool - Auto-detect" );
+            err.setHeaderText( null );
+            err.initOwner( mainStage );
+            err.showAndWait();
+          }
+        });
+        scanTask.setOnFailed( ev -> autoDetectItem.setDisable( false ) );
+        new Thread( scanTask ).start();
+      });
 
       // this will stream MIDI messages to System.out if debugging is enabled in Debugging class
       MidiMonitor monitor = new MidiMonitor( sharedData );
       
-      midiMenu.getItems().addAll( portsItem );
+      midiMenu.getItems().addAll( portsItem, autoDetectItem );
 
       ewiMenu = new Menu( "_EWI" );
       fetchAllItem = new MenuItem( "Fetch _All Patches" );
