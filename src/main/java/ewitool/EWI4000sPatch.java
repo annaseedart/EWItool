@@ -188,8 +188,7 @@ public class EWI4000sPatch {
     }
     
     byte[] toBytes() {
-      byte[] blob = new byte[15];
-      blob = Arrays.copyOf( nrpn.toBytes(), 21 );
+      byte[] blob = Arrays.copyOf( nrpn.toBytes(), 15 );
       blob[3] = (byte) mode;
       blob[4] = (byte) freq;
       blob[5] = (byte) q;
