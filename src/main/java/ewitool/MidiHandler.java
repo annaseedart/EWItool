@@ -165,7 +165,8 @@ public class MidiHandler {
                 Debugger.log( "Debug - Could not open OUT Port: " + infos[d].getName());
               }
             }
-          } else if (device.getMaxTransmitters() != 0) {
+          }
+          if (device.getMaxTransmitters() != 0) {
             if (infos[d].getName().equals( userPrefs.midiInPort.getValue() )) {
               try {
                 inDev = MidiSystem.getMidiDevice( infos[d] );
@@ -314,6 +315,7 @@ public class MidiHandler {
     reqMsg[4] = MIDI_SYSEX_ID_REQ;
     reqMsg[5] = MIDI_SYSEX_TRAILER;
     Debugger.log( "DEBUG - MidiHandler requesting Device ID" );
+    sharedData.deviceIdQ.clear();
     sendSysEx( reqMsg.clone(), SendMsg.DelayType.NONE );
     try {
       SharedData.DeviceIdResponse dId = sharedData.deviceIdQ.poll( MIDI_TIMEOUT_MS, TimeUnit.MILLISECONDS );
