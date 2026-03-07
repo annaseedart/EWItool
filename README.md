@@ -126,6 +126,42 @@ The app-image is placed in `target/EWItool/`.  Run it with:
 
 You can copy or move the entire `target/EWItool/` directory anywhere on your system.
 
+### Building a click-to-open macOS installer (`.dmg`)
+
+Use the `macos-dmg` Maven profile to produce a native macOS disk-image installer.
+**This must be run on a macOS machine** — `jpackage` does not support cross-platform builds.
+
+> **Requires JDK 14 or later** on macOS (for `jpackage`).
+
+```bash
+# Clone and build on macOS:
+git clone https://github.com/annaseedart/EWItool.git
+cd EWItool
+mvn package -P macos-dmg
+```
+
+The resulting installer is at `target/EWItool-2.1.dmg`.
+
+**Install and run:**
+1. Double-click `EWItool-2.1.dmg` to mount the disk image.
+2. Drag `EWItool.app` from the disk image into your **Applications** folder.
+3. Eject the disk image.
+4. Double-click `EWItool.app` in Applications to launch.
+
+> **Gatekeeper note (macOS with Gatekeeper enabled):** Because the app is not
+> signed with an Apple Developer certificate, macOS Gatekeeper may show
+> *"EWItool cannot be opened because it is from an unidentified developer."*
+> To bypass this **once**: right-click (or Control-click) `EWItool.app` →
+> **Open** → click **Open** in the confirmation dialog.  After that first
+> launch the app opens normally.
+>
+> Alternatively, go to **System Settings → Privacy & Security** and click
+> **Open Anyway** next to the EWItool warning.
+
+The `.app` bundle contains its own JRE for the host architecture (Intel x86_64 or
+Apple Silicon AArch64 depending on which Mac you build on).  No separate Java
+installation is required on the Mac that runs the app.
+
 ---
 
 ## Project structure
@@ -137,13 +173,21 @@ EWItool/
 │       ├── java/ewitool/       # Java source files
 │       └── resources/
 │           ├── ewitool/        # CSS stylesheet
-│           └── resources/      # Application icon
+│           └── resources/      # Application icon (PNG)
 ├── diagnose.sh                 # Diagnostic script (Linux / macOS)
 ├── diagnose.ps1                # Diagnostic script (Windows PowerShell)
 ├── diagnose.bat                # Diagnostic launcher (Windows, double-click)
 ├── pom.xml                     # Maven build file
 └── README.md
 ```
+
+### Maven build profiles
+
+| Profile | Platform | Command | Output |
+|---|---|---|---|
+| _(default)_ | any | `mvn package` | `target/EWItool.jar` — fat JAR, needs JRE 11+ to run |
+| `standalone` | Linux | `mvn package -P standalone` | `target/EWItool/bin/EWItool` — native Linux launcher with bundled JRE |
+| `macos-dmg` | **macOS** | `mvn package -P macos-dmg` | `target/EWItool-2.1.dmg` — click-to-open macOS disk-image installer |
 
 ---
 

@@ -285,5 +285,99 @@
                 </plugins>
             </build>
         </profile>
+        <!--
+          Profile: macos-dmg
+          Activated with: mvn package -P macos-dmg
+          Must be run on macOS (jpackage does not support cross-platform builds).
+          Produces target/EWItool-2.1.dmg — a standard macOS disk-image installer
+          that contains EWItool.app bundled with its own JRE.
+
+          Install steps for end users:
+            1. Double-click EWItool-2.1.dmg to mount the disk image.
+            2. Drag EWItool.app into the Applications shortcut that appears.
+            3. Eject the disk image.
+            4. Double-click EWItool.app in Applications to launch.
+          On first launch macOS Gatekeeper may block an unsigned app; right-click
+          (or Control-click) EWItool.app and choose "Open" to bypass it once.
+        -->
+        <profile>
+            <id>macos-dmg</id>
+            <build>
+                <plugins>
+                    <!-- Step 1: copy the fat JAR into an isolated staging directory so
+                         jpackage's input does not pick up stray files from target/. -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <execution>
+                                <id>prepare-jpackage-input-macos</id>
+                                <phase>package</phase>
+                                <goals><goal>run</goal></goals>
+                                <configuration>
+                                    <target>
+                                        <!-- remove any stale DMG so jpackage does not fail -->
+                                        <delete file="${project.build.directory}/EWItool-${project.version}.dmg" failonerror="false"/>
+                                        <delete dir="${project.build.directory}/jpackage-input" failonerror="false"/>
+                                        <mkdir dir="${project.build.directory}/jpackage-input"/>
+                                        <copy file="${project.build.directory}/EWItool.jar"
+                                              todir="${project.build.directory}/jpackage-input"
+                                              overwrite="true"/>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!-- Step 2: invoke jpackage to build the DMG.
+                         jpackage embeds the host-architecture JRE (x86_64 on Intel Mac,
+                         aarch64 on Apple Silicon) and wraps EWItool.jar in a .app bundle
+                         inside the resulting DMG. -->
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.3.0</version>
+                        <executions>
+                            <execution>
+                                <id>jpackage-macos-dmg</id>
+                                <phase>package</phase>
+                                <goals><goal>exec</goal></goals>
+                                <configuration>
+                                    <executable>jpackage</executable>
+                                    <arguments>
+                                        <!-- macOS disk-image installer containing EWItool.app -->
+                                        <argument>--type</argument>
+                                        <argument>dmg</argument>
+                                        <argument>--name</argument>
+                                        <argument>EWItool</argument>
+                                        <argument>--app-version</argument>
+                                        <argument>${project.version}</argument>
+                                        <argument>--description</argument>
+                                        <argument>${project.description}</argument>
+                                        <!-- reverse-DNS bundle identifier for macOS -->
+                                        <argument>--mac-package-identifier</argument>
+                                        <argument>uk.co.stephenmerrony.ewitool</argument>
+                                        <argument>--mac-package-name</argument>
+                                        <argument>EWItool</argument>
+                                        <argument>--input</argument>
+                                        <argument>${project.build.directory}/jpackage-input</argument>
+                                        <argument>--main-jar</argument>
+                                        <argument>EWItool.jar</argument>
+                                        <argument>--main-class</argument>
+                                        <argument>ewitool.Launcher</argument>
+                                        <!-- PNG icon; jpackage on macOS converts it for the .app -->
+                                        <argument>--icon</argument>
+                                        <argument>${project.basedir}/src/main/resources/resources/EWItoolLogo1.png</argument>
+                                        <argument>--dest</argument>
+                                        <argument>${project.build.directory}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 </project>
