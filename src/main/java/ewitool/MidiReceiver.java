@@ -103,8 +103,10 @@ public class MidiReceiver implements Receiver {
         }
       }
 
-      if (messageBytes[0] == MidiHandler.MIDI_SYSEX_NONREALTIME && 
-          messageBytes[1] == 0x00) { // DEVICE ID
+      if (messageBytes[0] == MidiHandler.MIDI_SYSEX_NONREALTIME &&
+          messageBytes.length >= 4 &&
+          messageBytes[2] == MidiHandler.MIDI_SYSEX_GEN_INFO &&
+          messageBytes[3] == MidiHandler.MIDI_SYSEX_ID) { // DEVICE ID REPLY
         if (messageBytes.length != (MidiHandler.EWI_SYSEX_ID_RESPONSE_LEN - 1)) {
           sharedData.deviceIdQ.add( SharedData.DeviceIdResponse.WRONG_LENGTH );
           return;
