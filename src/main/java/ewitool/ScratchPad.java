@@ -125,7 +125,9 @@ public class ScratchPad {
   
   // does the specified patch name already exist in the scratchpad?
   public boolean exists( String name ) {
-    // TODO: test for extant patch with same name
+    for (EWI4000sPatch patch : patchList) {
+      if (patch.getName().equals( name )) return true;
+    }
     return false;
   }
   

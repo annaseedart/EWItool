@@ -118,7 +118,6 @@ public class Main extends Application {
                             );
 
     currentPatchSetTab.setDisable( true );
-// FIXME Uncomment before release    patchEditorTab.setDisable( true );
     patchEditorTab.setDisable( true );
     keyPatchesTab.setDisable( true );
 

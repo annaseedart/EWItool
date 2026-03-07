@@ -323,6 +323,30 @@ public class PatchEditorTab extends Tab {
     editPatch.oscFilter2.sweepDepth = randNear( 0, 127, editPatch.oscFilter2.sweepDepth );
     editPatch.oscFilter2.sweepTime = randNear( 0, 127, editPatch.oscFilter2.sweepTime );
     
+    editPatch.noiseFilter1.breathCurve = randNear( 0, 127, editPatch.noiseFilter1.breathCurve );
+    editPatch.noiseFilter1.breathMod = randNear( 0, 127, editPatch.noiseFilter1.breathMod );
+    editPatch.noiseFilter1.freq = randNear( 0, 127, editPatch.noiseFilter1.freq );
+    editPatch.noiseFilter1.keyFollow = randNear( 0, 127, editPatch.noiseFilter1.keyFollow );
+    editPatch.noiseFilter1.lfoBreath = randNear( 0, 127, editPatch.noiseFilter1.lfoBreath );
+    editPatch.noiseFilter1.lfoDepth = randNear( 0, 127, editPatch.noiseFilter1.lfoDepth );
+    editPatch.noiseFilter1.lfoFreq = randNear( 0, 127, editPatch.noiseFilter1.lfoFreq );
+    editPatch.noiseFilter1.lfoThreshold = randNear( 0, 127, editPatch.noiseFilter1.lfoThreshold );
+    editPatch.noiseFilter1.q = randNear( 5, 127, editPatch.noiseFilter1.q );
+    editPatch.noiseFilter1.sweepDepth = randNear( 0, 127, editPatch.noiseFilter1.sweepDepth );
+    editPatch.noiseFilter1.sweepTime = randNear( 0, 127, editPatch.noiseFilter1.sweepTime );
+
+    editPatch.noiseFilter2.breathCurve = randNear( 0, 127, editPatch.noiseFilter2.breathCurve );
+    editPatch.noiseFilter2.breathMod = randNear( 0, 127, editPatch.noiseFilter2.breathMod );
+    editPatch.noiseFilter2.freq = randNear( 0, 127, editPatch.noiseFilter2.freq );
+    editPatch.noiseFilter2.keyFollow = randNear( 0, 127, editPatch.noiseFilter2.keyFollow );
+    editPatch.noiseFilter2.lfoBreath = randNear( 0, 127, editPatch.noiseFilter2.lfoBreath );
+    editPatch.noiseFilter2.lfoDepth = randNear( 0, 127, editPatch.noiseFilter2.lfoDepth );
+    editPatch.noiseFilter2.lfoFreq = randNear( 0, 127, editPatch.noiseFilter2.lfoFreq );
+    editPatch.noiseFilter2.lfoThreshold = randNear( 0, 127, editPatch.noiseFilter2.lfoThreshold );
+    editPatch.noiseFilter2.q = randNear( 5, 127, editPatch.noiseFilter2.q );
+    editPatch.noiseFilter2.sweepDepth = randNear( 0, 127, editPatch.noiseFilter2.sweepDepth );
+    editPatch.noiseFilter2.sweepTime = randNear( 0, 127, editPatch.noiseFilter2.sweepTime );
+    
     editPatch.chorusDelay1 = randNear( 0, 127, editPatch.chorusDelay1 );
     editPatch.chorusModLev1 = randNear( 0, 127, editPatch.chorusModLev1 );
     editPatch.chorusWetLev1 = randNear( 0, 127, editPatch.chorusWetLev1 );
@@ -569,7 +593,33 @@ public class PatchEditorTab extends Tab {
     editPatch.noiseLevel = randBetween( 0, 127 );
     editPatch.noiseTime = randBetween( 0, 127 );
     
-    // TODO add noise filters
+    editPatch.noiseFilterLink = randBetween( 0, 2 );
+
+    editPatch.noiseFilter1.mode = randBetween( 0, 4 );
+    editPatch.noiseFilter1.breathCurve = randBetween( 0, 127 );
+    editPatch.noiseFilter1.breathMod = randBetween( 0, 127 );
+    editPatch.noiseFilter1.freq = randBetween( 0, 127 );
+    editPatch.noiseFilter1.keyFollow = randBetween( 0, 127 );
+    editPatch.noiseFilter1.lfoBreath = randBetween( 0, 127 );
+    editPatch.noiseFilter1.lfoDepth = randBetween( 0, 127 );
+    editPatch.noiseFilter1.lfoFreq = randBetween( 0, 127 );
+    editPatch.noiseFilter1.lfoThreshold = randBetween( 0, 127 );
+    editPatch.noiseFilter1.q = randBetween( 5, 127 );
+    editPatch.noiseFilter1.sweepDepth = randBetween( 0, 127 );
+    editPatch.noiseFilter1.sweepTime = randBetween( 0, 127 );
+
+    editPatch.noiseFilter2.mode = randBetween( 0, 4 );
+    editPatch.noiseFilter2.breathCurve = randBetween( 0, 127 );
+    editPatch.noiseFilter2.breathMod = randBetween( 0, 127 );
+    editPatch.noiseFilter2.freq = randBetween( 0, 127 );
+    editPatch.noiseFilter2.keyFollow = randBetween( 0, 127 );
+    editPatch.noiseFilter2.lfoBreath = randBetween( 0, 127 );
+    editPatch.noiseFilter2.lfoDepth = randBetween( 0, 127 );
+    editPatch.noiseFilter2.lfoFreq = randBetween( 0, 127 );
+    editPatch.noiseFilter2.lfoThreshold = randBetween( 0, 127 );
+    editPatch.noiseFilter2.q = randBetween( 5, 127 );
+    editPatch.noiseFilter2.sweepDepth = randBetween( 0, 127 );
+    editPatch.noiseFilter2.sweepTime = randBetween( 0, 127 );
     
     editPatch.chorusSwitch = randBetween( 0, 1 );
     editPatch.chorusDelay1 = randBetween( 0, 127 );
@@ -703,7 +753,29 @@ public class PatchEditorTab extends Tab {
     editPatch.noiseLevel = mixInts( editPatch.noiseLevel, 50, tmpPatch.noiseLevel);
     editPatch.noiseTime = mixInts( editPatch.noiseTime, 50, tmpPatch.noiseTime);
     
-    // TODO add noise filters
+    editPatch.noiseFilter1.breathCurve = mixInts( editPatch.noiseFilter1.breathCurve, 50, tmpPatch.noiseFilter1.breathCurve);
+    editPatch.noiseFilter1.breathMod = mixInts( editPatch.noiseFilter1.breathMod, 50, tmpPatch.noiseFilter1.breathMod);
+    editPatch.noiseFilter1.freq = mixInts( editPatch.noiseFilter1.freq, 50, tmpPatch.noiseFilter1.freq);
+    editPatch.noiseFilter1.keyFollow = mixInts( editPatch.noiseFilter1.keyFollow, 50, tmpPatch.noiseFilter1.keyFollow);
+    editPatch.noiseFilter1.lfoBreath = mixInts( editPatch.noiseFilter1.lfoBreath, 50, tmpPatch.noiseFilter1.lfoBreath);
+    editPatch.noiseFilter1.lfoDepth = mixInts( editPatch.noiseFilter1.lfoDepth, 50, tmpPatch.noiseFilter1.lfoDepth);
+    editPatch.noiseFilter1.lfoFreq = mixInts( editPatch.noiseFilter1.lfoFreq, 50, tmpPatch.noiseFilter1.lfoFreq);
+    editPatch.noiseFilter1.lfoThreshold = mixInts( editPatch.noiseFilter1.lfoThreshold, 50, tmpPatch.noiseFilter1.lfoThreshold);
+    editPatch.noiseFilter1.q = mixInts( editPatch.noiseFilter1.q, 50, tmpPatch.noiseFilter1.q);
+    editPatch.noiseFilter1.sweepDepth = mixInts( editPatch.noiseFilter1.sweepDepth, 50, tmpPatch.noiseFilter1.sweepDepth);
+    editPatch.noiseFilter1.sweepTime = mixInts( editPatch.noiseFilter1.sweepTime, 50, tmpPatch.noiseFilter1.sweepTime);
+
+    editPatch.noiseFilter2.breathCurve = mixInts( editPatch.noiseFilter2.breathCurve, 50, tmpPatch.noiseFilter2.breathCurve);
+    editPatch.noiseFilter2.breathMod = mixInts( editPatch.noiseFilter2.breathMod, 50, tmpPatch.noiseFilter2.breathMod);
+    editPatch.noiseFilter2.freq = mixInts( editPatch.noiseFilter2.freq, 50, tmpPatch.noiseFilter2.freq);
+    editPatch.noiseFilter2.keyFollow = mixInts( editPatch.noiseFilter2.keyFollow, 50, tmpPatch.noiseFilter2.keyFollow);
+    editPatch.noiseFilter2.lfoBreath = mixInts( editPatch.noiseFilter2.lfoBreath, 50, tmpPatch.noiseFilter2.lfoBreath);
+    editPatch.noiseFilter2.lfoDepth = mixInts( editPatch.noiseFilter2.lfoDepth, 50, tmpPatch.noiseFilter2.lfoDepth);
+    editPatch.noiseFilter2.lfoFreq = mixInts( editPatch.noiseFilter2.lfoFreq, 50, tmpPatch.noiseFilter2.lfoFreq);
+    editPatch.noiseFilter2.lfoThreshold = mixInts( editPatch.noiseFilter2.lfoThreshold, 50, tmpPatch.noiseFilter2.lfoThreshold);
+    editPatch.noiseFilter2.q = mixInts( editPatch.noiseFilter2.q, 50, tmpPatch.noiseFilter2.q);
+    editPatch.noiseFilter2.sweepDepth = mixInts( editPatch.noiseFilter2.sweepDepth, 50, tmpPatch.noiseFilter2.sweepDepth);
+    editPatch.noiseFilter2.sweepTime = mixInts( editPatch.noiseFilter2.sweepTime, 50, tmpPatch.noiseFilter2.sweepTime);
     
    // editPatch.chorusSwitch = mixInts( 0, 1 );
     editPatch.chorusDelay1 = mixInts( editPatch.chorusDelay1, 50, tmpPatch.chorusDelay1);
