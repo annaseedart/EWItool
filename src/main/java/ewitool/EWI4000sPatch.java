@@ -518,7 +518,7 @@ public class EWI4000sPatch {
     
   public static String toHex( byte[] blob, boolean addSpaces ) {
     String fmt;
-    StringBuffer hexStr = new StringBuffer();
+    StringBuilder hexStr = new StringBuilder();
     if (blob.length < EWI_PATCH_LENGTH) return "Too short";
     if (blob.length > EWI_PATCH_LENGTH) return "Too long";
     if (addSpaces)

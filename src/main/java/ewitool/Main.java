@@ -92,7 +92,7 @@ public class Main extends Application {
     ScratchPad scratchPad = new ScratchPad( sharedData, userPrefs );
 
     statusBar = new UiStatusBar( sharedData );
-    sharedData.addObserver( statusBar );
+    sharedData.addPropertyChangeListener( statusBar );
     root.setBottom( statusBar );
 
     midiHandler = new MidiHandler( sharedData, userPrefs );

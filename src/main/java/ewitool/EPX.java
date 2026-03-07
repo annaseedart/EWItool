@@ -24,6 +24,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 
 import javafx.scene.control.Alert;
@@ -40,7 +41,6 @@ public class EPX {
                                           " JVM/" + System.getProperty( "java.version" );
   public static final String PROTOCOL = "http://";
   public static final String BASE_REQ = "/EPX/epx.php?action=";
-  public static final String URL_ENCODING = "UTF-8";
   
   SharedData sharedData;
   UserPrefs userPrefs;
@@ -76,11 +76,11 @@ public class EPX {
         int respCode = con.getResponseCode();
         Debugger.log( "DEBUG - EPX: Got response " + respCode + " for connection test" );
         if (respCode == 200) {
-          BufferedReader br = new BufferedReader( new InputStreamReader( con.getInputStream() ) );
-          String line;
-          StringBuffer reply = new StringBuffer();
-          while ((line = br.readLine()) != null) reply.append( line );
-          br.close();
+          StringBuilder reply = new StringBuilder();
+          try ( BufferedReader br = new BufferedReader( new InputStreamReader( con.getInputStream() ) ) ) {
+            String line;
+            while ((line = br.readLine()) != null) reply.append( line );
+          }
           if (reply.toString().contains( "Connection: OK" )) {
             sharedData.setEpxAvailable( true );
             return true;
@@ -106,11 +106,11 @@ public class EPX {
       int respCode = con.getResponseCode();
       Debugger.log( "DEBUG - EPX: Got response " + respCode + " for valid user test" );
       if (respCode != 200) return false;
-      BufferedReader br = new BufferedReader( new InputStreamReader( con.getInputStream() ) );
-      String line;
-      StringBuffer reply = new StringBuffer();
-      while ((line = br.readLine()) != null) reply.append( line );
-      br.close();
+      StringBuilder reply = new StringBuilder();
+      try ( BufferedReader br = new BufferedReader( new InputStreamReader( con.getInputStream() ) ) ) {
+        String line;
+        while ((line = br.readLine()) != null) reply.append( line );
+      }
       if (reply.toString().contains( "Login: OK" )) return true;
     } catch( MalformedURLException e ) {
       e.printStackTrace();
@@ -129,15 +129,15 @@ public class EPX {
       int respCode = con.getResponseCode();
       Debugger.log( "DEBUG - EPX: Got response " + respCode + " for dropdownData request" );
       if (respCode != 200) return null;
-      BufferedReader br = new BufferedReader( new InputStreamReader( con.getInputStream() ) );
-      String line = br.readLine();
-      while (line != null && !line.contains( "<body>" )) {
-        line = br.readLine();
+      try ( BufferedReader br = new BufferedReader( new InputStreamReader( con.getInputStream() ) ) ) {
+        String line = br.readLine();
+        while (line != null && !line.contains( "<body>" )) {
+          line = br.readLine();
+        }
+        dds[0] = br.readLine();
+        dds[1] = br.readLine();
+        dds[2] = br.readLine();
       }
-      dds[0] = br.readLine();
-      dds[1] = br.readLine();
-      dds[2] = br.readLine();
-      br.close();
       return dds;
     } catch( MalformedURLException e ) {
       e.printStackTrace();
@@ -153,35 +153,35 @@ public class EPX {
                          "&userid=" + userPrefs.getEpxUserid() + 
                          "&passwd=" + userPrefs.getEpxPassword() +
                          "&type=" + type +
-                         "&since=" + URLEncoder.encode( since, URL_ENCODING ) +
-                         "&contrib=" + URLEncoder.encode( contrib, URL_ENCODING ) +
-                         "&origin=" + URLEncoder.encode( origin, URL_ENCODING ) +
-                         "&tags=" + URLEncoder.encode( tags, URL_ENCODING )
+                         "&since=" + URLEncoder.encode( since, StandardCharsets.UTF_8 ) +
+                         "&contrib=" + URLEncoder.encode( contrib, StandardCharsets.UTF_8 ) +
+                         "&origin=" + URLEncoder.encode( origin, StandardCharsets.UTF_8 ) +
+                         "&tags=" + URLEncoder.encode( tags, StandardCharsets.UTF_8 )
                         );
       HttpURLConnection con = (HttpURLConnection) url.openConnection();
       con.setRequestProperty( "User-Agent", USER_AGENT );
       int respCode = con.getResponseCode();
       Debugger.log( "DEBUG - EPX: Got response " + respCode + " for query request" );
       if (respCode != 200) return null;
-      BufferedReader br = new BufferedReader( new InputStreamReader( con.getInputStream() ) );
-      String line = br.readLine();
-      while (line != null && !line.contains( "<body>" )) {
-        line = br.readLine();
-      }
-      line = br.readLine();
       LinkedList<QueryResult> lqr = new LinkedList<>();
-      while (line != null && line.length() > 3 && !line.contains( "</body>" )) {
-        if (line.startsWith( "Error:" )) {
-          System.err.println( "ERROR - EPX: " + line );
-          break;
+      try ( BufferedReader br = new BufferedReader( new InputStreamReader( con.getInputStream() ) ) ) {
+        String line = br.readLine();
+        while (line != null && !line.contains( "<body>" )) {
+          line = br.readLine();
         }
-        QueryResult qr = new QueryResult();
-        qr.name_user = line.substring( 0, line.lastIndexOf( ',' ) );
-        qr.epx_id = Integer.parseInt( line.substring( line.lastIndexOf( ',' ) + 1 ) );
-        lqr.add( qr );
         line = br.readLine();
+        while (line != null && line.length() > 3 && !line.contains( "</body>" )) {
+          if (line.startsWith( "Error:" )) {
+            System.err.println( "ERROR - EPX: " + line );
+            break;
+          }
+          QueryResult qr = new QueryResult();
+          qr.name_user = line.substring( 0, line.lastIndexOf( ',' ) );
+          qr.epx_id = Integer.parseInt( line.substring( line.lastIndexOf( ',' ) + 1 ) );
+          lqr.add( qr );
+          line = br.readLine();
+        }
       }
-      br.close();
       Debugger.log( "DEBUG - EPX: Query returning " + lqr.size() + " rows" );
       return lqr;
     } catch( MalformedURLException e ) {
@@ -204,23 +204,22 @@ public class EPX {
       int respCode = con.getResponseCode();
       Debugger.log( "DEBUG - EPX: Got response " + respCode + " for fetchPatch request" );
       if (respCode != 200) return null;
-      BufferedReader br = new BufferedReader( new InputStreamReader( con.getInputStream() ) );
-      String line = br.readLine();
-      while (line != null && !line.contains( "<body>" )) {
-        line = br.readLine();
+      try ( BufferedReader br = new BufferedReader( new InputStreamReader( con.getInputStream() ) ) ) {
+        String line = br.readLine();
+        while (line != null && !line.contains( "<body>" )) {
+          line = br.readLine();
+        }
+        String[] dets = br.readLine().split( "," );
+        dr.name = dets[0];
+        dr.contrib = dets[1];
+        dr.origin = dets[2];
+        dr.hex = dets[3];
+        dr.type = dets[4];
+        dr.desc = dets[5];
+        dr.added = dets[6];
+        dr.privateFlag = !dets[7].contentEquals( "0" );
+        if (dets.length == 9) dr.tags = dets[8];
       }
-      String[] dets = br.readLine().split( "," );
-      br.close();
-      dr.name = dets[0];
-      dr.contrib = dets[1];
-      dr.origin = dets[2];
-      dr.hex = dets[3];
-      dr.type = dets[4];
-      dr.desc = dets[5];
-      dr.added = dets[6];
-      dr.privateFlag = !dets[7].contentEquals( "0" );
-      if (dets.length == 9) dr.tags = dets[8];
-      br.close();
     } catch( MalformedURLException e ) {
       e.printStackTrace();
     } catch( IOException e ) {
@@ -238,12 +237,12 @@ public class EPX {
       url = new URL( PROTOCOL + userPrefs.getEpxHost() + BASE_REQ + "insertPatch" +
           "&userid=" + userPrefs.getEpxUserid() + 
           "&passwd=" + userPrefs.getEpxPassword() +
-          "&name=" + URLEncoder.encode( name, URL_ENCODING ) +
-          "&origin=" + URLEncoder.encode( origin, URL_ENCODING ) +
-          "&type=" + URLEncoder.encode( type, URL_ENCODING ) +
-          "&desc=" + URLEncoder.encode( desc, URL_ENCODING ) +
+          "&name=" + URLEncoder.encode( name, StandardCharsets.UTF_8 ) +
+          "&origin=" + URLEncoder.encode( origin, StandardCharsets.UTF_8 ) +
+          "&type=" + URLEncoder.encode( type, StandardCharsets.UTF_8 ) +
+          "&desc=" + URLEncoder.encode( desc, StandardCharsets.UTF_8 ) +
           "&private=" + priv +
-          "&tags=" + URLEncoder.encode( tags, URL_ENCODING ) +
+          "&tags=" + URLEncoder.encode( tags, StandardCharsets.UTF_8 ) +
           "&hexpatch=" + hexPatch
           );
       
@@ -251,30 +250,30 @@ public class EPX {
       con.setRequestProperty( "User-Agent", USER_AGENT );
       int respCode = con.getResponseCode();
       Debugger.log( "DEBUG - EPX: Got response " + respCode + " for insertPatch request" );
-      BufferedReader br = new BufferedReader( new InputStreamReader( con.getInputStream() ) );
-      String line = br.readLine();
-      while (line != null && !line.contains( "<body>" )) {
-        line = br.readLine();
+      try ( BufferedReader br = new BufferedReader( new InputStreamReader( con.getInputStream() ) ) ) {
+        String line = br.readLine();
+        while (line != null && !line.contains( "<body>" )) {
+          line = br.readLine();
+        }
+        String resp = br.readLine();
+        if (resp != null && resp.contains( "Resource id #" )) {
+          Alert okAl = new Alert( AlertType.INFORMATION );
+          okAl.setTitle( "EWItool - Patch Exchange Submission" );
+          okAl.setContentText( "Patch Successfully sent to EWI Patch Exchange - Thank You" );
+          okAl.showAndWait();
+        } else if (resp != null && resp.contains( "duplicate key" )) {
+          Alert w1Al = new Alert( AlertType.ERROR );
+          w1Al.setTitle( "EWItool - Patch Exchange Submission" );
+          w1Al.setContentText( "Export error - that patch is already in the exchange" );
+          w1Al.showAndWait(); 
+        } else {
+          Alert w2Al = new Alert( AlertType.ERROR);
+          w2Al.setTitle( "EWItool - Patch Exchange Submission" );
+          w2Al.setContentText( "Export Error" );
+          Debugger.log( "DEBUG - EPX: Got error " + resp + " for insertPatch request" );
+          w2Al.showAndWait();
+        }
       }
-      String resp = br.readLine();
-      if (resp != null && resp.contains( "Resource id #" )) {
-        Alert okAl = new Alert( AlertType.INFORMATION );
-        okAl.setTitle( "EWItool - Patch Exchange Submission" );
-        okAl.setContentText( "Patch Successfully sent to EWI Patch Exchange - Thank You" );
-        okAl.showAndWait();
-      } else if (resp != null && resp.contains( "duplicate key" )) {
-        Alert w1Al = new Alert( AlertType.ERROR );
-        w1Al.setTitle( "EWItool - Patch Exchange Submission" );
-        w1Al.setContentText( "Export error - that patch is already in the exchange" );
-        w1Al.showAndWait(); 
-      } else {
-        Alert w2Al = new Alert( AlertType.ERROR);
-        w2Al.setTitle( "EWItool - Patch Exchange Submission" );
-        w2Al.setContentText( "Export Error" );
-        Debugger.log( "DEBUG - EPX: Got error " + resp + " for insertPatch request" );
-        w2Al.showAndWait();
-      }
-      br.close();
     } catch( MalformedURLException e ) {
       e.printStackTrace();
       System.err.println( "ERROR - Malformed URL in EPX.deletePatch" );

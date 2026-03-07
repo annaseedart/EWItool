@@ -17,7 +17,9 @@
 
 package ewitool;
 
-import java.util.Observable;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
+import java.util.Arrays;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -25,7 +27,9 @@ import java.util.concurrent.LinkedBlockingQueue;
  * @author steve
  *
  */
-public class SharedData extends Observable {
+public class SharedData {
+
+  private final PropertyChangeSupport pcs = new PropertyChangeSupport( this );
   
   public final static int NONE = -1;
   public final static int PATCH_LOADED = 1;
@@ -86,8 +90,12 @@ public class SharedData extends Observable {
     midiMonitoring = false;
   }
   
+  public void addPropertyChangeListener( PropertyChangeListener l ) {
+    pcs.addPropertyChangeListener( l );
+  }
+
   public void clear() {
-    for ( EWI4000sPatch p : ewiPatchList ) p = null;
+    Arrays.fill( ewiPatchList, null );
     setLastPatchLoaded( NONE );
   }
   
@@ -97,29 +105,29 @@ public class SharedData extends Observable {
   public boolean getEwiAttached() { return ewiAttached; }
   public void setEwiAttached( boolean isIt ) {
     if (isIt != ewiAttached) {
-      ewiAttached = isIt; setChanged(); notifyObservers();
+      ewiAttached = isIt; pcs.firePropertyChange( "ewiAttached", !isIt, isIt );
     }
   }
   public boolean getEpxAvailable() { return epxAvailable; }
   public void setEpxAvailable( boolean isIt ) {
     if (isIt != epxAvailable) {
-      epxAvailable = isIt; setChanged(); notifyObservers();
+      epxAvailable = isIt; pcs.firePropertyChange( "epxAvailable", !isIt, isIt );
     }
   }
   
   public String getMidiInDev() { return midiInDev; }
-  public void setMidiInDev( String dev ) { midiInDev = dev; setChanged(); notifyObservers(); }
+  public void setMidiInDev( String dev ) { String old = midiInDev; midiInDev = dev; pcs.firePropertyChange( "midiInDev", old, dev ); }
   public String getMidiOutDev() { return midiOutDev; }
-  public void setMidiOutDev( String dev ) { midiOutDev = dev; setChanged(); notifyObservers(); }
+  public void setMidiOutDev( String dev ) { String old = midiOutDev; midiOutDev = dev; pcs.firePropertyChange( "midiOutDev", old, dev ); }
   
   public int getScratchPadCount() { return scratchPadCount; }
-  public void setScratchPadCount( int count ) { scratchPadCount = count; setChanged(); notifyObservers(); }
+  public void setScratchPadCount( int count ) { int old = scratchPadCount; scratchPadCount = count; pcs.firePropertyChange( "scratchPadCount", old, count ); }
   
   public boolean getMidiMonitoring() { return midiMonitoring; }
-  public void setMidiMonitoring( boolean areWe ) { midiMonitoring = areWe; setChanged(); notifyObservers(); }
+  public void setMidiMonitoring( boolean areWe ) { midiMonitoring = areWe; pcs.firePropertyChange( "midiMonitoring", !areWe, areWe ); }
   
   public String getStatusMessage() { return statusMessage; }
-  public void setStatusMessage( String msg ) { statusMessage = msg; statusMillis = System.currentTimeMillis(); setChanged(); notifyObservers(); }
+  public void setStatusMessage( String msg ) { String old = statusMessage; statusMessage = msg; statusMillis = System.currentTimeMillis(); pcs.firePropertyChange( "statusMessage", old, msg ); }
   public long getStatusMillis() { return statusMillis; }
   
   /**
