@@ -108,9 +108,13 @@ Run it with:
 java -jar target/EWItool.jar
 ```
 
-### Building a native standalone executable (no Java required at runtime)
+### Building a native standalone executable (Linux only)
 
-Use the `standalone` Maven profile to produce a self-contained app-image that bundles its own JRE.  The resulting `EWItool` binary can be run directly — no Java installation needed on the target machine.
+Use the `standalone` Maven profile to produce a self-contained Linux app-image that bundles its own JRE.  The resulting `EWItool` binary can be run directly — no Java installation needed on the target machine.
+
+> **Linux only** — `jpackage --type app-image` produces a `bin/EWItool` launcher on
+> Linux.  On macOS the same command produces a `.app` bundle instead
+> (see [Building a click-to-open macOS installer (.dmg)](#building-a-click-to-open-macos-installer-dmg) below).
 
 > **Requires JDK 14 or later** (for `jpackage`).
 
@@ -125,6 +129,11 @@ The app-image is placed in `target/EWItool/`.  Run it with:
 ```
 
 You can copy or move the entire `target/EWItool/` directory anywhere on your system.
+
+> **macOS note:** If you run `mvn package -P standalone` on macOS, `jpackage` will
+> produce `target/EWItool.app/` (a macOS app bundle) rather than
+> `target/EWItool/bin/EWItool`.  The `standalone` profile is intended for Linux.
+> For a macOS installer use the `macos-dmg` profile described in the next section.
 
 ### Building a click-to-open macOS installer (`.dmg`)
 

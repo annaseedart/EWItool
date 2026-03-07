@@ -234,8 +234,12 @@
                                 <goals><goal>run</goal></goals>
                                 <configuration>
                                     <target>
-                                        <!-- clean up any prior app-image so jpackage does not fail -->
+                                        <!-- clean up any prior app-image so jpackage does not fail.
+                                             On Linux jpackage produces target/EWItool/ (with bin/EWItool
+                                             inside); on macOS it produces target/EWItool.app/ instead.
+                                             Both are removed here so that re-runs succeed on either OS. -->
                                         <delete dir="${project.build.directory}/EWItool" failonerror="false"/>
+                                        <delete dir="${project.build.directory}/EWItool.app" failonerror="false"/>
                                         <mkdir dir="${project.build.directory}/jpackage-input"/>
                                         <copy file="${project.build.directory}/EWItool.jar"
                                               todir="${project.build.directory}/jpackage-input"
