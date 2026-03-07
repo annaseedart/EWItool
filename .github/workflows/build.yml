@@ -1,0 +1,90 @@
+name: Build EWItool
+
+on:
+  push:
+    branches: [ "main" ]
+    tags:     [ "v*" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  # ─── Job 1: fat JAR (cross-platform) ────────────────────────────────────────
+  build-jar:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Build fat JAR
+        run: mvn package --batch-mode
+
+      - name: Upload fat JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: EWItool-jar
+          path: target/EWItool.jar
+          retention-days: 90
+
+  # ─── Job 2: standalone Linux app-image (bundled JRE) ────────────────────────
+  build-linux-standalone:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Build standalone Linux app-image
+        run: mvn package -P standalone --batch-mode
+
+      - name: Create tarball of the app-image
+        run: |
+          cd target
+          tar -czf EWItool-linux-x86_64.tar.gz EWItool/
+
+      - name: Upload standalone Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: EWItool-linux-standalone
+          path: target/EWItool-linux-x86_64.tar.gz
+          retention-days: 90
+
+  # ─── Job 3: publish a GitHub Release on version tags ────────────────────────
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [ build-jar, build-linux-standalone ]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download fat JAR
+        uses: actions/download-artifact@v4.1.8
+        with:
+          name: EWItool-jar
+
+      - name: Download standalone Linux tarball
+        uses: actions/download-artifact@v4.1.8
+        with:
+          name: EWItool-linux-standalone
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            EWItool.jar
+            EWItool-linux-x86_64.tar.gz
+          generate_release_notes: true
