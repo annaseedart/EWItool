@@ -17,8 +17,8 @@
 
 package ewitool;
 
-import java.util.Observable;
-import java.util.Observer;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
@@ -32,7 +32,7 @@ import javafx.scene.layout.Region;
  * information at the bottom of the EWItool window.
  * 
  */
-public class UiStatusBar extends HBox implements Observer {
+public class UiStatusBar extends HBox implements PropertyChangeListener {
   
   Label messageLabel, midiInLabel, midiOutLabel, ewiLabel, scratchPadLabel, epxLabel;
   SharedData sharedData;
@@ -76,7 +76,7 @@ public class UiStatusBar extends HBox implements Observer {
    * @see java.util.Observer#update(java.util.Observable, java.lang.Object)
    */
   @Override
-  public void update( Observable o, Object arg ) {
+  public void propertyChange( PropertyChangeEvent evt ) {
     midiInLabel.setText( sharedData.getMidiInDev() );
     midiOutLabel.setText( sharedData.getMidiOutDev() );
     if (sharedData.getEwiAttached()) {

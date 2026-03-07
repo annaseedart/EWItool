@@ -108,6 +108,24 @@ Run it with:
 java -jar target/EWItool.jar
 ```
 
+### Building a native standalone executable (no Java required at runtime)
+
+Use the `standalone` Maven profile to produce a self-contained app-image that bundles its own JRE.  The resulting `EWItool` binary can be run directly — no Java installation needed on the target machine.
+
+> **Requires JDK 14 or later** (for `jpackage`).
+
+```bash
+mvn package -P standalone
+```
+
+The app-image is placed in `target/EWItool/`.  Run it with:
+
+```bash
+./target/EWItool/bin/EWItool
+```
+
+You can copy or move the entire `target/EWItool/` directory anywhere on your system.
+
 ---
 
 ## Project structure

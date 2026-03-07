@@ -208,4 +208,82 @@
             </plugin>
         </plugins>
     </build>
+
+    <!--
+      Profile: standalone
+      Activated with: mvn package -P standalone
+      Produces a self-contained Linux app-image in target/EWItool/ that includes a
+      bundled JRE and a native launcher.  Users can run it without a separate Java
+      installation:  ./target/EWItool/bin/EWItool
+    -->
+    <profiles>
+        <profile>
+            <id>standalone</id>
+            <build>
+                <plugins>
+                    <!-- Step 1: isolate the fat JAR in its own directory so jpackage
+                         does not include stray artifacts from target/. -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <execution>
+                                <id>prepare-jpackage-input</id>
+                                <phase>package</phase>
+                                <goals><goal>run</goal></goals>
+                                <configuration>
+                                    <target>
+                                        <!-- clean up any prior app-image so jpackage does not fail -->
+                                        <delete dir="${project.build.directory}/EWItool" failonerror="false"/>
+                                        <mkdir dir="${project.build.directory}/jpackage-input"/>
+                                        <copy file="${project.build.directory}/EWItool.jar"
+                                              todir="${project.build.directory}/jpackage-input"
+                                              overwrite="true"/>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!-- Step 2: run jpackage to build the app-image. -->
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.3.0</version>
+                        <executions>
+                            <execution>
+                                <id>jpackage-app-image</id>
+                                <phase>package</phase>
+                                <goals><goal>exec</goal></goals>
+                                <configuration>
+                                    <executable>jpackage</executable>
+                                    <arguments>
+                                        <argument>--type</argument>
+                                        <argument>app-image</argument>
+                                        <argument>--name</argument>
+                                        <argument>EWItool</argument>
+                                        <argument>--app-version</argument>
+                                        <argument>${project.version}</argument>
+                                        <argument>--description</argument>
+                                        <argument>${project.description}</argument>
+                                        <argument>--input</argument>
+                                        <argument>${project.build.directory}/jpackage-input</argument>
+                                        <argument>--main-jar</argument>
+                                        <argument>EWItool.jar</argument>
+                                        <argument>--main-class</argument>
+                                        <argument>ewitool.Launcher</argument>
+                                        <argument>--icon</argument>
+                                        <argument>${project.basedir}/src/main/resources/resources/EWItoolLogo1.png</argument>
+                                        <argument>--dest</argument>
+                                        <argument>${project.build.directory}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

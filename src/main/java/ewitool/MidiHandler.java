@@ -155,8 +155,9 @@ public class MidiHandler {
                 errAlert( "Error - MidiHandler() could not open chosen MIDI OUT device" );
               }
               if (outDev.isOpen()) {
-                (sendThread = new Thread( new MidiSender( sharedData, outDev ) )).start();
+                sendThread = new Thread( new MidiSender( sharedData, outDev ) );
                 sendThread.setName( "EWItool MIDI Sender" );
+                sendThread.start();
                 Debugger.log( "Debug - OUT Port: " + infos[d].getName());
                 final String outName = infos[d].getName();
                 Platform.runLater( () -> sharedData.setMidiOutDev( outName ) );
