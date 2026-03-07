@@ -392,7 +392,11 @@ public class MidiHandler {
     reqMsg[0] = MIDI_SYSEX_HEADER;
     reqMsg[1] = MIDI_SYSEX_AKAI_ID;	// 0x47 71.
     reqMsg[2] = MIDI_SYSEX_AKAI_EWI4K;	// 0x64 100.
-    reqMsg[3] = MIDI_SYSEX_CHANNEL;	// 0x00
+    // Use ALLCHANNELS (0x7F) so the request is accepted regardless of the EWI's
+    // configured MIDI channel.  From firmware 2.4 onwards the SysEx comm ch is
+    // linked to the MIDI channel setting, so using 0x00 only works when the EWI
+    // is set to MIDI Channel 1.
+    reqMsg[3] = MIDI_SYSEX_ALLCHANNELS;	// 0x7F
     reqMsg[4] = MIDI_PRESET_DUMP_REQ;	// 0x40 64.
     reqMsg[5] = (byte) sharedData.ewiPatchNums[p]; 
     reqMsg[6] = MIDI_SYSEX_TRAILER;	// 0xf7 -9.

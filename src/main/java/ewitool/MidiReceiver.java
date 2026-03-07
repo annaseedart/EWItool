@@ -123,8 +123,13 @@ public class MidiReceiver implements Receiver {
         if (idLen > 0 && messageBytes[idLen - 1] == MidiHandler.MIDI_SYSEX_TRAILER) {
           idLen--;
         }
-        if (idLen != (MidiHandler.EWI_SYSEX_ID_RESPONSE_LEN - 1)) {
-          Debugger.log( "DEBUG - MidiReceiver: Device ID response wrong length: " + messageBytes.length );
+        // Accept both the original EWI4000s non-standard format (14 bytes, firmware <= 2.3)
+        // and the standard MIDI Device Identity Reply format (13 bytes, firmware 2.4+).
+        // Old format:      F0 7E ch 06 02 47 64 <8 bytes> F7   => idLen==14, EWI4K at [5]
+        // Standard format: F0 7E ch 06 02 47 00 64 00 01 <4 ver bytes> F7 => idLen==13, EWI4K at [6]
+        if (idLen != (MidiHandler.EWI_SYSEX_ID_RESPONSE_LEN - 1) &&
+            idLen != (MidiHandler.EWI_SYSEX_ID_RESPONSE_LEN - 2)) {
+          Debugger.log( "DEBUG - MidiReceiver: Device ID response wrong length: " + idLen );
           sharedData.deviceIdQ.add( SharedData.DeviceIdResponse.WRONG_LENGTH );
           return;
         }
@@ -133,12 +138,24 @@ public class MidiReceiver implements Receiver {
           sharedData.deviceIdQ.add( SharedData.DeviceIdResponse.NOT_AKAI );
           return;
         }
-        if (messageBytes[5] != MidiHandler.MIDI_SYSEX_AKAI_EWI4K) {
-          Debugger.log( "DEBUG - MidiReceiver: Device ID response is not EWI4000s (byte[5]=0x" + Integer.toHexString(messageBytes[5] & 0xFF) + ")" );
+        // Check for EWI4000s ID (0x64):
+        //   Old firmware (<= 2.3) non-standard format: 0x64 at byte[5]
+        //   Firmware 2.4+ standard MIDI format: 0x00 family-LSB at byte[5], 0x64 family-MSB at byte[6]
+        boolean isEwi4000s = (messageBytes[5] == MidiHandler.MIDI_SYSEX_AKAI_EWI4K)
+            || (idLen >= 7 && messageBytes[5] == 0x00 && messageBytes[6] == MidiHandler.MIDI_SYSEX_AKAI_EWI4K);
+        if (!isEwi4000s) {
+          Debugger.log( "DEBUG - MidiReceiver: Device ID response is not EWI4000s (byte[5]=0x"
+              + Integer.toHexString(messageBytes[5] & 0xFF)
+              + (idLen >= 7 ? " byte[6]=0x" + Integer.toHexString(messageBytes[6] & 0xFF) : "") + ")" );
           sharedData.deviceIdQ.add( SharedData.DeviceIdResponse.NOT_EWI4000S );
           return;
         }
-        // Could get firmware version here too if needed...
+        // Log firmware version if available (standard MIDI format puts version at bytes [9..12])
+        if (idLen >= 13 && messageBytes[5] == 0x00 && messageBytes[6] == MidiHandler.MIDI_SYSEX_AKAI_EWI4K) {
+          Debugger.log( "DEBUG - MidiReceiver: EWI4000s firmware version: "
+              + (messageBytes[9] & 0xFF) + "." + (messageBytes[10] & 0xFF)
+              + "." + (messageBytes[11] & 0xFF) + "." + (messageBytes[12] & 0xFF) );
+        }
         Debugger.log( "DEBUG - MidiReceiver got correct EWI4000s Device ID" );
         sharedData.deviceIdQ.add( SharedData.DeviceIdResponse.IS_EWI4000S);
         // must use runLater as not on GUI thread here...

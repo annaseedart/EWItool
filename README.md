@@ -30,6 +30,72 @@ On macOS you may also double-click the JAR file if `.jar` files are associated w
 
 ---
 
+## Configuring the EWI4000s for use with EWItool
+
+### Firmware version 2.4 and later
+
+Firmware 2.4 introduced several changes that affect how EWItool communicates with the
+EWI4000s.  EWItool has been updated to handle these changes automatically, but a few
+one-time EWI4000s settings are required for reliable operation.
+
+#### Recommended MIDI channel setting
+
+From firmware 2.4 onwards the EWI4000s SysEx "Comm Ch" (communication channel) is
+**linked to the MIDI channel setting**:
+
+| EWI4000s MIDI channel | SysEx Comm Ch |
+|-----------------------|---------------|
+| 1 (default)           | 0             |
+| 2                     | 1             |
+| …                     | …             |
+| 16                    | 15            |
+
+EWItool addresses the EWI4000s using the SysEx "all-channels" value (0x7F), which is
+accepted by the EWI4000s regardless of the channel you have selected.  **You do not need
+to change your MIDI channel** — any channel from 1 to 16 will work.
+
+#### 'PC' menu settings (firmware 2.4+)
+
+The firmware 2.4 update replaced the old 'dP' menu with a new 'PC' menu containing
+three sub-items.  The recommended settings for use with EWItool are:
+
+| Sub-item | Meaning                                    | Recommended setting |
+|----------|--------------------------------------------|---------------------|
+| `dP`     | Enable Direct Program Change               | ON (default)        |
+| `AL`     | Allow all notes across all octaves         | OFF (default)       |
+| `Et`     | Send MIDI Program Change messages when a key patch note is played | ON (default)        |
+
+Navigate to the `PC` menu on the EWI4000s and verify these are set to their defaults.
+Toggle any sub-item by pressing the **TRANS** key.
+
+> **Key Patches tab:** The Key Patches tab in EWItool only works correctly with firmware
+> 2.3 or later.  With firmware 2.4+, ensure `dP` is ON and `AL` is OFF.  Saving key
+> patches to the EWI4000s is currently **disabled** due to a known firmware 2.4 bug.
+
+#### 'CP' menu — alternate MIDI receive mode
+
+Firmware 2.4 added a new `CP` menu.  If you experience problems with SysEx communication
+(e.g. patches time out or are not received by the EWI), try enabling the 'CP' mode:
+
+1. Navigate to the **CP** menu on the EWI4000s.
+2. Press **TRANS** to set it to **ON**.
+
+This enables an alternate MIDI receive mode that improves compatibility with some USB
+MIDI interfaces and host drivers.
+
+#### Connecting and detecting the EWI4000s
+
+1. Make sure the EWI4000s is **switched on** and connected to your computer via USB.
+2. Launch EWItool.
+3. Use **MIDI → Auto-detect EWI4000s** to automatically find and configure the MIDI ports.
+   If auto-detect succeeds, EWItool is ready to use.
+4. If auto-detect fails, use **MIDI → Ports** to select the EWI4000s MIDI IN and OUT
+   ports manually.  The port is typically listed as *"EWI4000s"* or similar.
+5. Once the ports are saved, use **EWI → Fetch All Patches** to load patches from the
+   EWI4000s.
+
+---
+
 ## Troubleshooting — if the JAR does not open
 
 If `java -jar EWItool.jar` does nothing, shows an error, or closes immediately, run the
