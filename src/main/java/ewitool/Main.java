@@ -234,42 +234,59 @@ public class Main extends Application {
         busyAlert.setTitle( "EWItool" );
         busyAlert.setHeaderText( null );
         busyAlert.initOwner( mainStage );
-        // Remove all buttons so the dialog cannot be accidentally dismissed during the fetch.
-        busyAlert.getButtonTypes().clear();
+        // Replace the default OK button with a Cancel button so the user can
+        // abort a fetch that is taking too long without force-quitting the app.
+        busyAlert.getButtonTypes().setAll( javafx.scene.control.ButtonType.CANCEL );
         busyAlert.show();
         javafx.concurrent.Task<Void> fetchTask = new javafx.concurrent.Task<Void>() {
           @Override
           protected Void call() throws InterruptedException {
             if (!midiHandler.requestDeviceID()) {
-              Platform.runLater( () -> {
-                busyAlert.close();
-                fetchAllItem.setDisable( false );
-                Alert errAlert = new Alert( AlertType.ERROR, "Not connected to an EWI4000s" );
-                errAlert.setTitle( "EWItool - Error" );
-                errAlert.initOwner( mainStage );
-                errAlert.showAndWait();
-              });
+              if (!isCancelled()) {
+                Platform.runLater( () -> {
+                  busyAlert.close();
+                  fetchAllItem.setDisable( false );
+                  Alert errAlert = new Alert( AlertType.ERROR, "Not connected to an EWI4000s" );
+                  errAlert.setTitle( "EWItool - Error" );
+                  errAlert.initOwner( mainStage );
+                  errAlert.showAndWait();
+                });
+              }
               return null;
             }
             sharedData.clear();
             for (int p = 0; p < EWI4000sPatch.EWI_NUM_PATCHES; p++) {
+              if (isCancelled()) return null;
               midiHandler.requestPatch( p );
               final int progress = p + 1;
               Platform.runLater( () -> busyAlert.setTitle( progress + " of 100" ) );
             }
-            Platform.runLater( () -> {
-              busyAlert.close();
-              fetchAllItem.setDisable( false );
-              ((CurrentPatchSetTab) currentPatchSetTab).updateLabels();
-              ((PatchEditorTab) patchEditorTab).populateCombo( sharedData );
-              currentPatchSetTab.setDisable( false );
-              patchEditorTab.setDisable( false );
-              keyPatchesTab.setDisable( false );
-              tabPane.getSelectionModel().select( currentPatchSetTab );
-            });
+            if (!isCancelled()) {
+              Platform.runLater( () -> {
+                busyAlert.close();
+                fetchAllItem.setDisable( false );
+                ((CurrentPatchSetTab) currentPatchSetTab).updateLabels();
+                ((PatchEditorTab) patchEditorTab).populateCombo( sharedData );
+                currentPatchSetTab.setDisable( false );
+                patchEditorTab.setDisable( false );
+                keyPatchesTab.setDisable( false );
+                tabPane.getSelectionModel().select( currentPatchSetTab );
+              });
+            }
             return null;
           }
         };
+        // Wire up the Cancel button: interrupt the background task immediately.
+        javafx.scene.Node cancelButton = busyAlert.getDialogPane()
+            .lookupButton( javafx.scene.control.ButtonType.CANCEL );
+        if (cancelButton != null) {
+          cancelButton.addEventFilter( javafx.event.ActionEvent.ACTION, ev -> {
+            fetchTask.cancel( true );
+            busyAlert.close();
+            fetchAllItem.setDisable( false );
+            ev.consume();
+          });
+        }
         fetchTask.setOnFailed( ev -> {
           Platform.runLater( () -> {
             busyAlert.close();

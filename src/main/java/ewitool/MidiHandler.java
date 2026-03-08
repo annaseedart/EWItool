@@ -228,8 +228,13 @@ public class MidiHandler {
     if (sendThread != null && sendThread.isAlive()) {
       sendThread.interrupt();
       try {
-        sendThread.join();
+        // Use a bounded join so we never block the calling thread (which may be
+        // the JavaFX Application Thread) for more than a short period.  If the
+        // sender thread is sleeping during a post-SysEx delay its interrupt flag
+        // is now properly preserved (see MidiSender), so 2 s is more than enough.
+        sendThread.join( 2000 );
       } catch( InterruptedException e ) {
+        Thread.currentThread().interrupt();
       }
     }
     sendThread = null;
@@ -340,6 +345,7 @@ public class MidiHandler {
         MidiDevice probeOut = null;
         MidiDevice probeIn = null;
         Transmitter probeTx = null;
+        Receiver probeOutReceiver = null;
         try {
           probeOut = MidiSystem.getMidiDevice( outInfo );
           probeOut.open();
@@ -352,29 +358,37 @@ public class MidiHandler {
           probeTx = probeIn.getTransmitter();
           probeTx.setReceiver( probeReceiver );
 
-          // Build and send Universal Device Identity Request
-          Receiver probeOutReceiver = probeOut.getReceiver();
+          // Build and send Universal Device Identity Request.
+          // Keep probeOutReceiver open until AFTER the poll: on macOS, CoreMIDI
+          // may buffer the outbound SysEx, and closing the receiver immediately
+          // after send() can cancel the pending transmission before it is flushed.
+          probeOutReceiver = probeOut.getReceiver();
           byte[] idReq = new byte[]{
             MIDI_SYSEX_HEADER, MIDI_SYSEX_NONREALTIME, MIDI_SYSEX_ALLCHANNELS,
             MIDI_SYSEX_GEN_INFO, MIDI_SYSEX_ID_REQ, MIDI_SYSEX_TRAILER
           };
           javax.sound.midi.SysexMessage idMsg = new javax.sound.midi.SysexMessage( idReq, idReq.length );
           probeOutReceiver.send( idMsg, -1 );
-          probeOutReceiver.close();
 
           // Wait up to MIDI_TIMEOUT_MS for a Device ID response
           SharedData.DeviceIdResponse resp = probeData.deviceIdQ.poll( MIDI_TIMEOUT_MS, TimeUnit.MILLISECONDS );
           if (resp == SharedData.DeviceIdResponse.IS_EWI4000S) {
             Debugger.log( "DEBUG - MidiHandler: EWI4000s found: OUT=" + outInfo.getName() + " IN=" + inInfo.getName() );
-            // Save to prefs — this fires the listeners in Main which call restart()
-            // We update them here manually so the flag is set before restart runs.
-            userPrefs.setMidiOutPort( outInfo.getName() );
-            userPrefs.setMidiInPort( inInfo.getName() );
+            // Save port names to prefs on the JavaFX Application Thread so the
+            // StringProperty change listeners (which call midiHandler.restart()
+            // and update JavaFX nodes) fire on the correct thread.
+            final String foundOut = outInfo.getName();
+            final String foundIn  = inInfo.getName();
+            Platform.runLater( () -> {
+              userPrefs.setMidiOutPort( foundOut );
+              userPrefs.setMidiInPort( foundIn );
+            });
             return true;
           }
         } catch( Exception e ) {
           Debugger.log( "DEBUG - MidiHandler: probe exception for OUT=" + outInfo.getName() + " IN=" + inInfo.getName() + ": " + e.getMessage() );
         } finally {
+          if (probeOutReceiver != null) try { probeOutReceiver.close(); } catch( Exception ignore ) {}
           if (probeTx != null) try { probeTx.close(); } catch( Exception ignore ) {}
           if (probeIn != null && probeIn.isOpen()) try { probeIn.close(); } catch( Exception ignore ) {}
           if (probeOut != null && probeOut.isOpen()) try { probeOut.close(); } catch( Exception ignore ) {}
@@ -476,6 +490,12 @@ public class MidiHandler {
   }
   
   synchronized final boolean requestDeviceID() {
+    // Fast-fail: if there is no active MIDI OUT sender there is nothing to send
+    // the request with, so skip the 3-second poll timeout entirely.
+    if (sendThread == null || !sendThread.isAlive()) {
+      Debugger.log( "DEBUG - MidiHandler: requestDeviceID: MIDI OUT sender not running, skipping" );
+      return false;
+    }
     byte[] reqMsg = new byte[6];
     reqMsg[0] = MIDI_SYSEX_HEADER;
     reqMsg[1] = MIDI_SYSEX_NONREALTIME;
@@ -490,19 +510,24 @@ public class MidiHandler {
       SharedData.DeviceIdResponse dId = sharedData.deviceIdQ.poll( MIDI_TIMEOUT_MS, TimeUnit.MILLISECONDS );
       if (dId == SharedData.DeviceIdResponse.IS_EWI4000S) {
         Debugger.log( "DEBUG - MidiHandler found EWI4000s" );
-        sharedData.setEwiAttached( true );
+        // MidiReceiver.send() already calls setEwiAttached(true) via Platform.runLater
+        // when it processes the IS_EWI4000S response, so we do not repeat it here.
         return true;
       } else if (dId == null) {
         Debugger.log( "DEBUG - MidiHandler did not find EWI4000s and timed out" );
-        sharedData.setEwiAttached( false );
       } else {
         Debugger.log( "DEBUG - MidiHandler did not find EWI4000s and got unexpected response" );
-        sharedData.setEwiAttached( false );
       }
+      // Only this method detects the failure cases (timeout / wrong response), so we
+      // are responsible for clearing the attached flag.  Use Platform.runLater because
+      // this method is called from background threads and setEwiAttached fires JavaFX
+      // property change listeners that update UI nodes.
+      Platform.runLater( () -> sharedData.setEwiAttached( false ) );
     } catch( InterruptedException e ) {
-      Debugger.log( "DEBUG - MidiHandler did not EWI4000s and was interrupted" );
+      Debugger.log( "DEBUG - MidiHandler did not find EWI4000s and was interrupted" );
+      // Restore the interrupt flag so callers (e.g. Task.call()) can detect cancellation.
+      Thread.currentThread().interrupt();
     }
-    //requestDeviceID();
     return false;
   }
 
