@@ -77,7 +77,12 @@ public class MidiSender implements Runnable {
           case CC:
             try {
               ShortMessage sm = new ShortMessage( ShortMessage.CONTROL_CHANGE, msg.cc, msg.value );
-              receiver.send( sm, NOW );
+              try {
+                receiver.send( sm, NOW );
+              } catch (RuntimeException re) {
+                System.err.println( "Error - MidiSender: failed to send CC message: " + re.getMessage() );
+                return;
+              }
               if (sharedData.getMidiMonitoring()) {
                 MidiMonitorMessage monMsg = new MidiMonitorMessage();
                 monMsg.direction = MidiMonitorMessage.MidiDirection.SENT;
@@ -97,7 +102,15 @@ public class MidiSender implements Runnable {
                 continue;
               }
               SysexMessage sysEx = new SysexMessage( msg.bytes, msg.bytes.length );
-              receiver.send( sysEx, NOW );
+              try {
+                receiver.send( sysEx, NOW );
+              } catch (RuntimeException re) {
+                // IllegalStateException is thrown when the receiver is closed (e.g. device
+                // disconnected).  Treat it as a fatal send error and exit the sender thread
+                // so the caller's poll() timeouts fire and errors are surfaced properly.
+                System.err.println( "Error - MidiSender: failed to send SysEx message: " + re.getMessage() );
+                return;
+              }
               if (sharedData.getMidiMonitoring()) {
                 MidiMonitorMessage monMsg = new MidiMonitorMessage();
                 monMsg.direction = MidiMonitorMessage.MidiDirection.SENT;
@@ -124,7 +137,9 @@ public class MidiSender implements Runnable {
                   break;
                 }
               } catch (InterruptedException e) {
-                e.printStackTrace();
+                // Preserve the interrupt status so the outer msgQ.take() also
+                // throws InterruptedException and the thread exits cleanly.
+                Thread.currentThread().interrupt();
               }
             } catch (InvalidMidiDataException e) {
               e.printStackTrace();
@@ -134,14 +149,20 @@ public class MidiSender implements Runnable {
             try {
               Debugger.log( "DEBUG - MidiSender sending System Reset to EWI" );
               ShortMessage sm = new ShortMessage( ShortMessage.SYSTEM_RESET );
-              receiver.send( sm, NOW );
+              try {
+                receiver.send( sm, NOW );
+              } catch (RuntimeException re) {
+                System.err.println( "Error - MidiSender: failed to send System Reset: " + re.getMessage() );
+                return;
+              }
             } catch (InvalidMidiDataException e) {
               e.printStackTrace();
             }
             try {
               Thread.sleep( MidiHandler.MIDI_MESSAGE_LONG_PAUSE_MS );
             } catch (InterruptedException e) {
-              e.printStackTrace();
+              // Preserve interrupt status so the outer take() also throws.
+              Thread.currentThread().interrupt();
             }
             break;
 
