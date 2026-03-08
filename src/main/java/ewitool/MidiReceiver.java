@@ -27,15 +27,12 @@ import javafx.application.Platform;
 public class MidiReceiver implements Receiver {
 
   SharedData sharedData;
-  MidiMonitorMessage mmsg;
 
   /**
    * @param pSharedData
    */
   public MidiReceiver( SharedData pSharedData ) {
     sharedData = pSharedData;
-    mmsg = new MidiMonitorMessage();
-    mmsg.direction = MidiMonitorMessage.MidiDirection.RECEIVED;
   }
 
   @Override
@@ -49,9 +46,11 @@ public class MidiReceiver implements Receiver {
       byte[] messageBytes = ((SysexMessage) message).getData();
       
       if (sharedData.getMidiMonitoring()) {
-        mmsg.type = MidiMsgType.SYSEX;
-        mmsg.bytes = ((SysexMessage) message).getData();
-        sharedData.monitorQ.add( mmsg );
+        MidiMonitorMessage monMsg = new MidiMonitorMessage();
+        monMsg.direction = MidiMonitorMessage.MidiDirection.RECEIVED;
+        monMsg.type = MidiMsgType.SYSEX;
+        monMsg.bytes = ((SysexMessage) message).getData();
+        sharedData.monitorQ.add( monMsg );
       }
 
       if (messageBytes[0] == MidiHandler.MIDI_SYSEX_AKAI_ID && 
