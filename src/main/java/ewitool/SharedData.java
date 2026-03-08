@@ -97,6 +97,7 @@ public class SharedData {
   public void clear() {
     Arrays.fill( ewiPatchList, null );
     setLastPatchLoaded( NONE );
+    patchQ.clear();
   }
   
   public int getLastPatchLoaded() { return lastPatchLoaded; }

@@ -417,19 +417,20 @@ public class MidiHandler {
     try {
       while (!gotIt && retries < MAX_PATCH_RETRIES) {
         Debugger.log( "DEBUG - MidiHandler Sending request for patch: " + p + " (Internal patch #: " + sharedData.ewiPatchNums[p] +")" );
+        // Clear any stale responses before sending to avoid late-arriving data from previous
+        // requests causing spurious out-of-sync detections that exhaust all retries.
+        sharedData.patchQ.clear();
         sendSysEx( reqMsg.clone(), SendMsg.DelayType.SHORT );
         // wait for a patch to be received, or timeout
         Integer pGot = sharedData.patchQ.poll( MIDI_TIMEOUT_MS, TimeUnit.MILLISECONDS );
         if (pGot == null)  {
           Debugger.log( "DEBUG - MidiHandler patch request timed out" );
-          sharedData.patchQ.clear();
           retries++;
           // sendSystemReset();
         } else if (pGot == p) {
           gotIt = true;
         } else {
           Debugger.log( "DEBUG - MidiHandler Got out-of-sync patch: " + p );
-          sharedData.patchQ.clear();
           retries++;
         } 
       }
