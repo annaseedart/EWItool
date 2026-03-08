@@ -234,6 +234,8 @@ public class Main extends Application {
         busyAlert.setTitle( "EWItool" );
         busyAlert.setHeaderText( null );
         busyAlert.initOwner( mainStage );
+        // Remove all buttons so the dialog cannot be accidentally dismissed during the fetch.
+        busyAlert.getButtonTypes().clear();
         busyAlert.show();
         javafx.concurrent.Task<Void> fetchTask = new javafx.concurrent.Task<Void>() {
           @Override
@@ -272,6 +274,12 @@ public class Main extends Application {
           Platform.runLater( () -> {
             busyAlert.close();
             fetchAllItem.setDisable( false );
+            Throwable ex = fetchTask.getException();
+            String msg = (ex != null && ex.getMessage() != null) ? ex.getMessage() : "An unexpected error occurred";
+            Alert errAlert = new Alert( AlertType.ERROR, "Failed to fetch patches: " + msg );
+            errAlert.setTitle( "EWItool - Error" );
+            errAlert.initOwner( mainStage );
+            errAlert.showAndWait();
           });
         });
         new Thread( fetchTask ).start();
