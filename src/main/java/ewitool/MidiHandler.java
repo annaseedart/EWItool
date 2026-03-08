@@ -207,10 +207,21 @@ public class MidiHandler {
   
   private static void errAlert( String msg ) {
     System.err.println( msg );
-    Alert al = new Alert( AlertType.ERROR );
-    al.setTitle( "EWItool - MIDI" );
-    al.setContentText( msg );
-    al.showAndWait();
+    if (Platform.isFxApplicationThread()) {
+      Alert al = new Alert( AlertType.ERROR );
+      al.setTitle( "EWItool - MIDI" );
+      al.setContentText( msg );
+      al.showAndWait();
+    } else {
+      // scanAndOpenMIDIPorts() runs on a background thread; schedule the alert
+      // on the FX thread without blocking the scan.
+      Platform.runLater( () -> {
+        Alert al = new Alert( AlertType.ERROR );
+        al.setTitle( "EWItool - MIDI" );
+        al.setContentText( msg );
+        al.showAndWait();
+      });
+    }
   }
 
   public void close() {
@@ -401,8 +412,10 @@ public class MidiHandler {
     reqMsg[5] = (byte) sharedData.ewiPatchNums[p]; 
     reqMsg[6] = MIDI_SYSEX_TRAILER;	// 0xf7 -9.
     boolean gotIt = false;
+    int retries = 0;
+    final int MAX_PATCH_RETRIES = 3;
     try {
-      while (!gotIt) {
+      while (!gotIt && retries < MAX_PATCH_RETRIES) {
         Debugger.log( "DEBUG - MidiHandler Sending request for patch: " + p + " (Internal patch #: " + sharedData.ewiPatchNums[p] +")" );
         sendSysEx( reqMsg.clone(), SendMsg.DelayType.SHORT );
         // wait for a patch to be received, or timeout
@@ -410,13 +423,18 @@ public class MidiHandler {
         if (pGot == null)  {
           Debugger.log( "DEBUG - MidiHandler patch request timed out" );
           sharedData.patchQ.clear();
+          retries++;
           // sendSystemReset();
-        } else 	if (pGot == p) {
+        } else if (pGot == p) {
           gotIt = true;
-        } else if (pGot != p) {
+        } else {
           Debugger.log( "DEBUG - MidiHandler Got out-of-sync patch: " + p );
           sharedData.patchQ.clear();
+          retries++;
         } 
+      }
+      if (!gotIt) {
+        System.err.println( "Warning - requestPatch: gave up after " + MAX_PATCH_RETRIES + " retries for patch " + p );
       }
     } catch( InterruptedException e ) {
       e.printStackTrace();

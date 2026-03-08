@@ -41,8 +41,6 @@ public class MidiSender implements Runnable {
   MidiDevice outDev;
   Receiver receiver;
 
-  MidiMonitorMessage mmsg;
-
   private final static long NOW = -1;
 
   MidiSender( SharedData pSharedData, MidiDevice pOutDev ) {
@@ -51,17 +49,15 @@ public class MidiSender implements Runnable {
     outDev = pOutDev;
     if (!outDev.isOpen()) {
       System.err.println( "Error - MidiSender() called with non-open MIDI Device" );
-      System.exit( 1 );
+      throw new IllegalStateException( "MidiSender() called with non-open MIDI Device" );
     }
     try {
       receiver = outDev.getReceiver();
     } catch (MidiUnavailableException e) {
       e.printStackTrace();
       System.err.println( "Error - MidiSender() could not obtain chosen MIDI OUT receiver" );
-      System.exit( 1 );
+      throw new IllegalStateException( "MidiSender() could not obtain chosen MIDI OUT receiver", e );
     }
-    mmsg = new MidiMonitorMessage();
-    mmsg.direction = MidiMonitorMessage.MidiDirection.SENT;
   }
 
   @Override
@@ -73,7 +69,8 @@ public class MidiSender implements Runnable {
         msg = msgQ.take();
         if (!outDev.isOpen()) {
           System.err.println( "Error - MidiSender: MIDI Out device is not open" );
-          System.exit( 1 );
+          receiver.close();
+          return;
         }
         if (msg != null && msg.msgType != null) {
           switch ( msg.msgType ) {
@@ -82,9 +79,11 @@ public class MidiSender implements Runnable {
               ShortMessage sm = new ShortMessage( ShortMessage.CONTROL_CHANGE, msg.cc, msg.value );
               receiver.send( sm, NOW );
               if (sharedData.getMidiMonitoring()) {
-                mmsg.type = MidiMsgType.CC;
-                mmsg.bytes = sm.getMessage();
-                sharedData.monitorQ.add( mmsg );
+                MidiMonitorMessage monMsg = new MidiMonitorMessage();
+                monMsg.direction = MidiMonitorMessage.MidiDirection.SENT;
+                monMsg.type = MidiMsgType.CC;
+                monMsg.bytes = sm.getMessage();
+                sharedData.monitorQ.add( monMsg );
               }
             } catch (InvalidMidiDataException e) {
               e.printStackTrace();
@@ -95,14 +94,16 @@ public class MidiSender implements Runnable {
               Debugger.log( "DEBUG - MidiSender thread got SysEx to send.  Length: " + msg.bytes.length );
               if (msg.bytes.length == 0 || msg.bytes[0] != MidiHandler.MIDI_SYSEX_HEADER) {
                 System.err.println( "Error - MidiSender received invalid SysEx send request" );
-                System.exit( 1 );
+                continue;
               }
               SysexMessage sysEx = new SysexMessage( msg.bytes, msg.bytes.length );
               receiver.send( sysEx, NOW );
               if (sharedData.getMidiMonitoring()) {
-                mmsg.type = MidiMsgType.SYSEX;
-                mmsg.bytes = sysEx.getMessage();
-                sharedData.monitorQ.add( mmsg );
+                MidiMonitorMessage monMsg = new MidiMonitorMessage();
+                monMsg.direction = MidiMonitorMessage.MidiDirection.SENT;
+                monMsg.type = MidiMsgType.SYSEX;
+                monMsg.bytes = sysEx.getMessage();
+                sharedData.monitorQ.add( monMsg );
               }
               // N.B. The final Qt version had a SLEEP(250) here
               try {
